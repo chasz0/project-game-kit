@@ -3,33 +3,493 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameKit Demos</title>
+  <title>GameKit — Modular 2D Game Engine Toolkit</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #1a1a1a; color: #eee; }
-    h1 { border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
-    nav a { color: #00ffcc; text-decoration: none; display: block; margin: 0.5rem 0; font-size: 1.2rem; }
-    nav a:hover { text-decoration: underline; color: #fff; }
-    h2 { color: #888; margin-top: 2rem; border-bottom: 1px dashed #444; padding-bottom: 0.5rem; }
+    :root {
+      --bg: #111318;
+      --panel: #1a1d24;
+      --panel-hover: #222630;
+      --border: #2b303c;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #00ffcc;
+      --accent-dim: rgba(0, 255, 204, 0.12);
+      --pink: #ff3366;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 19, 24, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand span {
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: var(--accent-dim);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent);
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .showcase-card {
+      background: linear-gradient(135deg, #1a242d 0%, #1a1d24 60%, #261824 100%);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .showcase-info {
+      max-width: 680px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .showcase-info h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .showcase-info p {
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .module-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .module-pills code {
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .btn-launch {
+      background: var(--accent);
+      color: #0b0e14;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 0.9rem 1.6rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: transform 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-launch:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .tier-section {
+      margin-bottom: 2.75rem;
+    }
+    .tier-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+    .tier-header h2 {
+      font-size: 1.25rem;
+    }
+    .tier-header span {
+      font-family: monospace;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      background: var(--panel-hover);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+    .card-path {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+    }
+    .card-footer code {
+      color: var(--text);
+    }
+    .card-footer span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .roadmap-card {
+      background: rgba(26, 29, 36, 0.5);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .roadmap-card h3 {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .roadmap-card p {
+      font-size: 0.85rem;
+      color: #636c76;
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
-  <h1>GameKit Modules</h1>
-  <nav>
-    <h2>Core</h2>
-    <a href="/demo/core/vec2-demo.html">Vec2 Demo</a>
-    <a href="/demo/core/events-demo.html">Events Demo</a>
-    <a href="/demo/core/loop-demo.html">Loop Demo</a>
-    <a href="/demo/core/input-demo.html">Input Demo</a>
-    <a href="/demo/core/timer-demo.html">Timer Demo</a>
-    <a href="/demo/core/random-demo.html">Random Demo</a>
-    
-    <h2>Gameplay</h2>
-    <a href="/demo/gameplay/pool-demo.html">Pool Demo</a>
-    <a href="/demo/gameplay/spatialHash-demo.html">Spatial Hash Demo</a>
-    <a href="/demo/gameplay/collision-demo.html">Collision Demo</a>
-    <a href="/demo/gameplay/stats-demo.html">Stats Demo</a>
-    <a href="/demo/gameplay/stateMachine-demo.html">State Machine Demo</a>
-    <a href="/demo/gameplay/camera-demo.html">Camera Demo</a>
-  </nav>
+  <header>
+    <div class="nav-container">
+      <a href="/" class="brand">GameKit <span>v0.2.0</span></a>
+      <nav class="nav-links">
+        <a href="/" class="active">Modules</a>
+        <a href="/demo/showcase/swarm-demo.html">12-Module Game</a>
+        <a href="/about.html">Architecture &amp; Docs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="showcase-card">
+      <div class="showcase-info">
+        <span class="badge">Full Integration Showcase</span>
+        <h1>Swarm Survival — 12-Module Stress Test</h1>
+        <p>
+          A replayable, seeded arena survival game built strictly with the 12 Core and Gameplay modules.
+          Includes spatial-hashed swarm separation, pooled projectiles and XP gems, modifier-driven level upgrades,
+          dash cooldowns, and live engine telemetry.
+        </p>
+        <div class="module-pills">
+          <code>Vec2</code>
+          <code>EventEmitter</code>
+          <code>GameLoop</code>
+          <code>InputManager</code>
+          <code>TimerManager</code>
+          <code>Random</code>
+          <code>Pool</code>
+          <code>SpatialHash</code>
+          <code>collision</code>
+          <code>Stats</code>
+          <code>StateMachine</code>
+          <code>Camera</code>
+        </div>
+      </div>
+      <a href="/demo/showcase/swarm-demo.html" class="btn-launch">Play Swarm Demo →</a>
+    </section>
+
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Tier 1: Core Foundations</h2>
+        <span>core/</span>
+      </div>
+      <div class="grid">
+        <a href="/demo/core/vec2-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Vec2</span>
+              <span class="card-path">core/vec2.js</span>
+            </div>
+            <p>In-place 2D vector operations, squared distance checks, clamping, and static non-mutating helpers.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { Vec2 }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/core/events-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Events</span>
+              <span class="card-path">core/events.js</span>
+            </div>
+            <p>Decoupled pub/sub event bus with snapshot iteration safety, one-shot listeners, and unsubscribe closures.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { EventEmitter, events }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/core/loop-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">GameLoop</span>
+              <span class="card-path">core/loop.js</span>
+            </div>
+            <p>Fixed-timestep accumulator loop with spiral-of-death clamping, render interpolation alpha, and FPS counter.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { GameLoop }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/core/input-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Input</span>
+              <span class="card-path">core/input.js</span>
+            </div>
+            <p>Action-mapped keyboard and mouse state tracker with press/release edge detection and canvas-relative coordinates.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { InputManager, input }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/core/timer-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Timer</span>
+              <span class="card-path">core/timer.js</span>
+            </div>
+            <p>Delta-time synchronized delays, progress tweens, and repeating intervals that pause naturally with the game loop.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { TimerManager, timer }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/core/random-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Random</span>
+              <span class="card-path">core/random.js</span>
+            </div>
+            <p>Mulberry32 seeded PRNG with FNV-1a string hashing for reproducible procedural generation and deterministic runs.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { Random, random }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Tier 2: Gameplay Systems</h2>
+        <span>gameplay/</span>
+      </div>
+      <div class="grid">
+        <a href="/demo/gameplay/pool-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Pool</span>
+              <span class="card-path">gameplay/pool.js</span>
+            </div>
+            <p>Object recycler with automatic init/reset hooks, WeakSet double-release protection, and configurable max cap.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { Pool }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/gameplay/spatialHash-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">SpatialHash</span>
+              <span class="card-path">gameplay/spatialHash.js</span>
+            </div>
+            <p>Zero-allocation 2D spatial index with integer cell keys, WeakMap bounds tracking, and early-exit cell updates.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { SpatialHash }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/gameplay/collision-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Collision</span>
+              <span class="card-path">gameplay/collision.js</span>
+            </div>
+            <p>Squared-distance overlap tests and minimum translation vector manifolds for Circle-Circle, Circle-Box, and Box-Box.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { collision }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/gameplay/stats-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Stats</span>
+              <span class="card-path">gameplay/stats.js</span>
+            </div>
+            <p>Health lifecycle and attribute calculator supporting flat and additive-percent modifiers with strict clamping.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { Stats }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/gameplay/stateMachine-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">StateMachine</span>
+              <span class="card-path">gameplay/stateMachine.js</span>
+            </div>
+            <p>Finite state machine with enter, update, and exit hooks for enemy AI states and top-level game flow.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { StateMachine }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+
+        <a href="/demo/gameplay/camera-demo.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-title">Camera</span>
+              <span class="card-path">gameplay/camera.js</span>
+            </div>
+            <p>2D viewport transform with dt-independent smooth follow, trauma shake, zoom scaling, and world/screen projection.</p>
+          </div>
+          <div class="card-footer">
+            <code>export { Camera }</code>
+            <span>Launch Demo →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Upcoming Tiers</h2>
+        <span>Roadmap</span>
+      </div>
+      <div class="roadmap-grid">
+        <div class="roadmap-card">
+          <h3>Tier 3: AI (ai/)</h3>
+          <p>Steering behaviors, separation/flocking, flow fields, and pathfinding.</p>
+        </div>
+        <div class="roadmap-card">
+          <h3>Tier 4: World (world/)</h3>
+          <p>Tilemaps, chunk streaming, and seeded procedural arena generation.</p>
+        </div>
+        <div class="roadmap-card">
+          <h3>Tier 5: UI (ui/)</h3>
+          <p>Dev console, floating combat text, menus, and dialogue boxes.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    GameKit — Zero-dependency vanilla JavaScript game architecture.
+  </footer>
 </body>
 </html>
