@@ -1,4 +1,4 @@
-import { Vec2 } from '../core/vec2.js';
+import { Vec2 } from '../../../core/vec2.js';
 
 const out = document.getElementById('output');
 const log = (msg) => out.textContent += msg + '\n';
