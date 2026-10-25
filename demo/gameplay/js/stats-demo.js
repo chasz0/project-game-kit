@@ -4,6 +4,7 @@ const out = document.getElementById('output');
 const dmgBtn = document.getElementById('dmgBtn');
 const healBtn = document.getElementById('healBtn');
 const buffBtn = document.getElementById('buffBtn');
+const buffBtn2 = document.getElementById('buffBtn2');
 
 const hero = new Stats({ maxHealth: 100, speed: 10, damage: 25 });
 let hasBuff = false;
@@ -38,6 +39,16 @@ buffBtn.addEventListener('click', () => {
     hero.addModifier('sprint', 'speed', 'mult', 0.5);
   } else {
     hero.removeModifier('sprint');
+  }
+  render();
+});
+
+buffBtn2.addEventListener('click', () => {
+  hasBuff = !hasBuff;
+  if (hasBuff) {
+    hero.addModifier('maxHealthBuff', 'maxHealth', 'add', 50);
+  } else {
+    hero.removeModifier('maxHealthBuff');
   }
   render();
 });

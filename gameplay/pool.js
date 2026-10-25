@@ -1,27 +1,36 @@
-// Recycles objects to prevent memory allocation overhead and garbage collection spikes.
-// const bulletPool = new Pool(() => new Vec2());
-// const b = bulletPool.get();
-// bulletPool.release(b);
+// Recycles objects to prevent memory allocation overhead.
 
 export class Pool {
-  constructor(factoryFn, initialSize = 0) {
+  constructor(factoryFn, initFn = null, resetFn = null, initialSize = 0) {
     this.factoryFn = factoryFn;
+    this.initFn = initFn;
+    this.resetFn = resetFn;
     this.items = [];
+    this.inPool = new WeakSet();
     
     for (let i = 0; i < initialSize; i++) {
-      this.items.push(this.factoryFn());
+      const item = this.factoryFn();
+      this.inPool.add(item);
+      this.items.push(item);
     }
   }
 
-  get() {
-    return this.items.length > 0 ? this.items.pop() : this.factoryFn();
+  get(...args) {
+    const item = this.items.length > 0 ? this.items.pop() : this.factoryFn();
+    this.inPool.delete(item);
+    if (this.initFn) this.initFn(item, ...args);
+    return item;
   }
 
   release(item) {
+    if (this.inPool.has(item)) return;
+    if (this.resetFn) this.resetFn(item);
+    this.inPool.add(item);
     this.items.push(item);
   }
 
   clear() {
     this.items.length = 0;
+    this.inPool = new WeakSet();
   }
 }

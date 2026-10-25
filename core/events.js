@@ -1,6 +1,5 @@
-// Global event bus to decouple game systems.
-// events.on('playerDeath', (data) => console.log(data));
-// events.emit('playerDeath', { score: 100 });
+// Global event bus.
+// const unsubscribe = events.on('death', () => {});
 
 class EventEmitter {
   constructor() {
@@ -12,6 +11,7 @@ class EventEmitter {
       this.listeners.set(event, []);
     }
     this.listeners.get(event).push(callback);
+    return () => this.off(event, callback);
   }
 
   off(event, callback) {
@@ -22,7 +22,8 @@ class EventEmitter {
 
   emit(event, data) {
     if (!this.listeners.has(event)) return;
-    for (const callback of this.listeners.get(event)) {
+    const callbacks = [...this.listeners.get(event)];
+    for (const callback of callbacks) {
       callback(data);
     }
   }

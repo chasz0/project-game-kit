@@ -1,7 +1,4 @@
 // Maps physical keyboard and mouse inputs to logical game actions.
-// Call input.update() at the end of your game loop to cycle states.
-// input.bind('jump', ['Space', 'ArrowUp']);
-// if (input.isPressed('jump')) { ... }
 
 class InputManager {
   constructor() {
@@ -9,15 +6,27 @@ class InputManager {
     this.state = new Map();
     this.prevState = new Map();
     this.mouse = { x: 0, y: 0 };
+    this.targetElement = document.body;
 
     window.addEventListener('keydown', (e) => this.state.set(e.code, true));
     window.addEventListener('keyup', (e) => this.state.set(e.code, false));
     window.addEventListener('mousedown', (e) => this.state.set(`Mouse${e.button}`, true));
     window.addEventListener('mouseup', (e) => this.state.set(`Mouse${e.button}`, false));
-    window.addEventListener('mousemove', (e) => {
-      this.mouse.x = e.clientX;
-      this.mouse.y = e.clientY;
+    
+    window.addEventListener('blur', () => {
+      this.state.clear();
+      this.prevState.clear();
     });
+
+    window.addEventListener('mousemove', (e) => {
+      const rect = this.targetElement.getBoundingClientRect();
+      this.mouse.x = e.clientX - rect.left;
+      this.mouse.y = e.clientY - rect.top;
+    });
+  }
+
+  setTarget(element) {
+    this.targetElement = element;
   }
 
   bind(action, keys) {
@@ -40,7 +49,10 @@ class InputManager {
   }
 
   update() {
-    this.prevState = new Map(this.state);
+    this.prevState.clear();
+    for (const [key, value] of this.state) {
+      this.prevState.set(key, value);
+    }
   }
 }
 

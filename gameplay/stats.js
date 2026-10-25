@@ -1,12 +1,12 @@
 // Manages entity health, base attributes, and temporary modifiers.
-// const hero = new Stats({ maxHealth: 100, speed: 50 });
-// hero.addModifier('dash', 'speed', 'mult', 0.5); // +50% speed
+// type: 'add' (flat value) or 'percent' (additive percentage, e.g., 0.5 for +50%)
 
 export class Stats {
   constructor(baseStats = {}) {
     this.base = { ...baseStats };
     this.modifiers = new Map();
     this.health = this.base.maxHealth || 1;
+    this.dead = false;
   }
 
   addModifier(id, stat, type, value) {
@@ -15,29 +15,35 @@ export class Stats {
 
   removeModifier(id) {
     this.modifiers.delete(id);
+    this.health = Math.min(this.health, this.get('maxHealth'));
   }
 
   get(stat) {
     let val = this.base[stat] || 0;
-    let mult = 1;
+    let percent = 1;
 
     for (const mod of this.modifiers.values()) {
       if (mod.stat === stat) {
         if (mod.type === 'add') val += mod.value;
-        if (mod.type === 'mult') mult += mod.value;
+        if (mod.type === 'percent') percent += mod.value;
       }
     }
 
-    return val * mult;
+    return val * percent;
   }
 
   takeDamage(amount) {
+    if (this.dead) return false;
     this.health = Math.max(0, this.health - amount);
-    return this.health === 0;
+    if (this.health === 0) { 
+      this.dead = true; 
+      return true; 
+    }
+    return false;
   }
 
   heal(amount) {
-    const max = this.get('maxHealth');
-    this.health = Math.min(max, this.health + amount);
+    if (this.dead) return;
+    this.health = Math.min(this.get('maxHealth'), this.health + amount);
   }
 }
