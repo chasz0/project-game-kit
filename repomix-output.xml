@@ -1,0 +1,1526 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+core/
+  events.js
+  input.js
+  loop.js
+  random.js
+  timer.js
+  vec2.js
+demo/
+  core/
+    js/
+      events-demo.js
+      input-demo.js
+      loop-demo.js
+      random-demo.js
+      timer-demo.js
+      vec2-demo.js
+    events-demo.html
+    input-demo.html
+    loop-demo.html
+    random-demo.html
+    timer-demo.html
+    vec2-demo.html
+  gameplay/
+    js/
+      camera-demo.js
+      collision-demo.js
+      pool-demo.js
+      spatialHash-demo.js
+      stateMachine-demo.js
+      stats-demo.js
+    camera-demo.html
+    collision-demo.html
+    pool-demo.html
+    spatialHash-demo.html
+    stateMachine-demo.html
+    stats-demo.html
+gameplay/
+  camera.js
+  collision.js
+  pool.js
+  spatialHash.js
+  stateMachine.js
+  stats.js
+.gitignore
+index.html
+index.js
+package.json
+vite.config.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="core/random.js">
+// Seeded random number generator for reproducible outcomes.
+// const rng = new Random('level-1');
+// rng.int(1, 10);
+
+export class Random {
+  constructor(seed = Date.now()) {
+    this.setSeed(seed);
+  }
+
+  setSeed(seed) {
+    if (typeof seed === 'string') {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = (hash << 5) - hash + seed.charCodeAt(i);
+        hash |= 0;
+      }
+      this.seed = Math.abs(hash) || 1;
+    } else {
+      this.seed = Math.abs(seed) || 1;
+    }
+  }
+
+  next() {
+    this.seed = (this.seed * 16807) % 2147483647;
+    return (this.seed - 1) / 2147483646;
+  }
+
+  range(min, max) {
+    return min + this.next() * (max - min);
+  }
+
+  int(min, max) {
+    return Math.floor(this.range(min, max + 1));
+  }
+
+  choice(array) {
+    return array[this.int(0, array.length - 1)];
+  }
+}
+
+export const random = new Random();
+</file>
+
+<file path="core/vec2.js">
+// Handles 2D vector math for positions, velocities, and directions.
+// const v1 = new Vec2(10, 5);
+// v1.add(new Vec2(2, 3)).normalize();
+
+export class Vec2 {
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+
+  add(v) {
+    this.x += v.x;
+    this.y += v.y;
+    return this;
+  }
+
+  sub(v) {
+    this.x -= v.x;
+    this.y -= v.y;
+    return this;
+  }
+
+  mult(n) {
+    this.x *= n;
+    this.y *= n;
+    return this;
+  }
+
+  mag() {
+    return Math.hypot(this.x, this.y);
+  }
+
+  normalize() {
+    const m = this.mag();
+    if (m > 0) {
+      this.x /= m;
+      this.y /= m;
+    }
+    return this;
+  }
+
+  distance(v) {
+    return Math.hypot(this.x - v.x, this.y - v.y);
+  }
+
+  clone() {
+    return new Vec2(this.x, this.y);
+  }
+}
+</file>
+
+<file path="demo/core/js/events-demo.js">
+import { events } from '@core/events.js';
+
+const out = document.getElementById('output');
+const log = (msg) => out.textContent += msg + '\n';
+
+const onLevelUp = (data) => {
+  log(`System A: Player leveled up to ${data.level}!`);
+};
+
+const playSound = (data) => {
+  log(`System B: Playing level up sound for level ${data.level}`);
+};
+
+// Register listeners
+events.on('levelUp', onLevelUp);
+events.on('levelUp', playSound);
+
+log('Emitting levelUp event...');
+events.emit('levelUp', { level: 2 });
+
+// Remove one listener and fire again
+events.off('levelUp', playSound);
+log('\nEmitting levelUp event after removing System B...');
+events.emit('levelUp', { level: 3 });
+</file>
+
+<file path="demo/core/js/input-demo.js">
+import { input } from '@core/input.js';
+
+const out = document.getElementById('output');
+
+input.bind('left', ['KeyA', 'ArrowLeft']);
+input.bind('right', ['KeyD', 'ArrowRight']);
+input.bind('shoot', ['Space', 'Mouse0']);
+
+const loop = () => {
+  let text = `Mouse: (${input.mouse.x}, ${input.mouse.y})\n\n`;
+  
+  text += `Moving Left: ${input.isDown('left')}\n`;
+  text += `Moving Right: ${input.isDown('right')}\n`;
+  
+  if (input.isPressed('shoot')) {
+    text += `\n> PEW PEW! (Shoot just pressed)`;
+  } else if (input.isDown('shoot')) {
+    text += `\n> Charging laser... (Shoot held)`;
+  } else if (input.isReleased('shoot')) {
+    text += `\n> Click! (Shoot just released)`;
+  }
+
+  out.textContent = text;
+  
+  // Must be called at the end of the frame to shift states
+  input.update(); 
+  requestAnimationFrame(loop);
+};
+
+requestAnimationFrame(loop);
+</file>
+
+<file path="demo/core/js/loop-demo.js">
+import { GameLoop } from '@core/loop.js';
+
+const out = document.getElementById('output');
+const btn = document.getElementById('toggleBtn');
+
+let ticks = 0;
+let frames = 0;
+
+const update = (dt) => {
+  ticks++;
+};
+
+const render = () => {
+  frames++;
+  out.textContent = `Updates (Fixed 60hz): ${ticks}\nRenders (Total): ${frames}\nCurrent FPS: ${loop.fps}`;
+};
+
+const loop = new GameLoop(update, render, 60);
+loop.start();
+
+btn.addEventListener('click', () => {
+  if (loop.isRunning) {
+    loop.stop();
+    btn.textContent = 'Start Loop';
+  } else {
+    loop.start();
+    btn.textContent = 'Stop Loop';
+  }
+});
+</file>
+
+<file path="demo/core/js/random-demo.js">
+import { Random } from '@core/random.js';
+
+const out = document.getElementById('output');
+const btn = document.getElementById('genBtn');
+const input = document.getElementById('seedInput');
+
+const lootTable = ['Sword', 'Shield', 'Potion', 'Gold', 'Trash'];
+
+const log = (msg) => out.textContent += msg + '\n';
+
+btn.addEventListener('click', () => {
+  out.textContent = ''; 
+  const currentSeed = input.value;
+  
+  const rng1 = new Random(currentSeed);
+  const rng2 = new Random(currentSeed);
+
+  log(`Seed: "${currentSeed}"\n`);
+
+  log('--- RNG 1 ---');
+  log(`Float: ${rng1.next().toFixed(4)}`);
+  log(`Damage: ${rng1.int(10, 20)}`);
+  log(`Loot: ${rng1.choice(lootTable)}\n`);
+
+  log('--- RNG 2 (Same Seed) ---');
+  log(`Float: ${rng2.next().toFixed(4)}`);
+  log(`Damage: ${rng2.int(10, 20)}`);
+  log(`Loot: ${rng2.choice(lootTable)}\n`);
+
+  log('Notice how RNG 1 and RNG 2 produce the exact same sequence.');
+});
+</file>
+
+<file path="demo/core/js/timer-demo.js">
+import { timer } from '@core/timer.js';
+
+const out = document.getElementById('output');
+const btn = document.getElementById('skillBtn');
+const bar = document.getElementById('bar');
+
+let lastTime = performance.now();
+let isCooldown = false;
+
+const log = (msg) => out.textContent += msg + '\n';
+
+btn.addEventListener('click', () => {
+  if (isCooldown) {
+    log('Skill is on cooldown!');
+    return;
+  }
+  
+  isCooldown = true;
+  log('Skill used! Cooldown started (2 seconds).');
+  
+  timer.add(
+    2000, 
+    () => {
+      isCooldown = false;
+      log('Cooldown finished. Skill ready.');
+      bar.style.width = '0%';
+    },
+    (progress) => {
+      // Tween the progress bar width
+      bar.style.width = `${progress * 100}%`;
+    }
+  );
+});
+
+const loop = (currentTime) => {
+  const dt = currentTime - lastTime;
+  lastTime = currentTime;
+  
+  timer.update(dt);
+  requestAnimationFrame(loop);
+};
+
+requestAnimationFrame(loop);
+</file>
+
+<file path="demo/core/js/vec2-demo.js">
+import { Vec2 } from '../../../core/vec2.js';
+
+const out = document.getElementById('output');
+const log = (msg) => out.textContent += msg + '\n';
+
+const player = new Vec2(0, 0);
+const enemy = new Vec2(3, 4);
+
+log(`Player: (${player.x}, ${player.y})`);
+log(`Enemy: (${enemy.x}, ${enemy.y})`);
+log(`Distance: ${player.distance(enemy)}`);
+
+player.add(new Vec2(1, 1));
+log(`Player moved: (${player.x}, ${player.y})`);
+
+enemy.normalize();
+log(`Enemy direction (normalized): (${enemy.x.toFixed(2)}, ${enemy.y.toFixed(2)})`);
+</file>
+
+<file path="demo/core/events-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Events Demo</title>
+</head>
+<body>
+  <h3>Events Demo</h3>
+  <pre id="output"></pre>
+  <script type="module" src="./js/events-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/core/input-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Input Demo</title>
+</head>
+<body>
+  <h3>Input Demo</h3>
+  <p>Test inputs: A, D, Left Arrow, Right Arrow, Spacebar, Left Click</p>
+  <pre id="output"></pre>
+  <script type="module" src="./js/input-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/core/loop-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Loop Demo</title>
+</head>
+<body>
+  <h3>Game Loop Demo</h3>
+  <pre id="output"></pre>
+  <button id="toggleBtn">Stop Loop</button>
+  <script type="module" src="./js/loop-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/core/random-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Demo</title>
+</head>
+<body>
+  <h3>Seeded Random Demo</h3>
+  <input type="text" id="seedInput" value="epic-seed-123" />
+  <button id="genBtn">Generate Sequence</button>
+  <pre id="output"></pre>
+  <script type="module" src="./js/random-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/core/timer-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Timer Demo</title>
+</head>
+<body>
+  <h3>Timer Demo</h3>
+  <button id="skillBtn">Use Skill</button>
+  <div style="width: 300px; height: 20px; background: #333; margin-top: 10px;">
+    <div id="bar" style="width: 0%; height: 100%; background: #00ffcc;"></div>
+  </div>
+  <pre id="output"></pre>
+  <script type="module" src="./js/timer-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/core/vec2-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vec2 Demo</title>
+</head>
+<body>
+  <h3>Vec2 Demo</h3>
+  <pre id="output"></pre>
+  <script type="module" src="./js/vec2-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/gameplay/js/camera-demo.js">
+import { Camera } from '@gameplay/camera.js';
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const cam = new Camera(canvas.width, canvas.height);
+const target = { x: 200, y: 150 };
+
+document.getElementById('shakeBtn').addEventListener('click', () => {
+  cam.shake(300, 15); 
+});
+
+document.getElementById('zoomInBtn').addEventListener('click', () => {
+  cam.setZoom(cam.zoom + 0.25);
+});
+
+document.getElementById('zoomOutBtn').addEventListener('click', () => {
+  cam.setZoom(cam.zoom - 0.25);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  // Transform mouse screen coords to world coords based on camera
+  target.x = (e.clientX - rect.left) / cam.zoom + cam.x;
+  target.y = (e.clientY - rect.top) / cam.zoom + cam.y;
+});
+
+let lastTime = performance.now();
+
+const drawGrid = () => {
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  for (let x = -500; x < 1000; x += 50) {
+    ctx.beginPath(); ctx.moveTo(x, -500); ctx.lineTo(x, 1000); ctx.stroke();
+  }
+  for (let y = -500; y < 1000; y += 50) {
+    ctx.beginPath(); ctx.moveTo(-500, y); ctx.lineTo(1000, y); ctx.stroke();
+  }
+};
+
+const loop = (time) => {
+  const dt = time - lastTime;
+  lastTime = time;
+
+  // Update camera logic
+  cam.follow(target, 0.05); // 0.05 gives a smooth lerp delay
+  cam.update(dt);
+
+  // Render
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to clear screen
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  cam.apply(ctx); // Apply camera transforms before drawing world
+
+  drawGrid();
+
+  // Draw target
+  ctx.fillStyle = '#00ffcc';
+  ctx.beginPath();
+  ctx.arc(target.x, target.y, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  requestAnimationFrame(loop);
+};
+
+requestAnimationFrame(loop);
+</file>
+
+<file path="demo/gameplay/js/collision-demo.js">
+import { collision } from '@gameplay/collision.js';
+
+const out = document.getElementById('output');
+const btn = document.getElementById('moveBtn');
+
+const boxA = { x: 0, y: 0, w: 20, h: 20 };
+const boxB = { x: 10, y: 10, w: 20, h: 20 };
+
+const circleA = { x: 50, y: 50, r: 10 };
+const circleB = { x: 65, y: 50, r: 10 };
+
+const render = () => {
+  let text = `--- Box vs Box ---\n`;
+  text += `Box A: (${boxA.x}, ${boxA.y})\n`;
+  text += `Box B: (${boxB.x}, ${boxB.y})\n`;
+  text += `Overlapping: ${collision.boxBox(boxA, boxB)}\n\n`;
+
+  text += `--- Circle vs Circle ---\n`;
+  text += `Circle A: (${circleA.x}, ${circleA.y})\n`;
+  text += `Circle B: (${circleB.x}, ${circleB.y})\n`;
+  text += `Overlapping: ${collision.circleCircle(circleA, circleB)}\n\n`;
+  
+  text += `--- Circle vs Box ---\n`;
+  text += `Circle A & Box B Overlapping: ${collision.circleBox(circleA, boxB)}\n`;
+
+  out.textContent = text;
+};
+
+btn.addEventListener('click', () => {
+  boxB.x += 5;
+  circleB.x += 2;
+  render();
+});
+
+render();
+</file>
+
+<file path="demo/gameplay/js/pool-demo.js">
+import { Pool } from '@gameplay/pool.js';
+
+const out = document.getElementById('output');
+const spawnBtn = document.getElementById('spawnBtn');
+const killBtn = document.getElementById('killBtn');
+
+class Particle {
+  constructor() {
+    this.id = Math.random().toString(36).substring(2, 7);
+    this.active = false;
+  }
+  
+  init() {
+    this.active = true;
+  }
+  
+  reset() {
+    this.active = false;
+  }
+}
+
+const particlePool = new Pool(() => new Particle(), 10);
+const activeParticles = [];
+
+const render = () => {
+  out.textContent = `Pool Size (Inactive): ${particlePool.items.length}\nActive Particles: ${activeParticles.length}\n\n`;
+  out.textContent += `Total objects in memory: ${particlePool.items.length + activeParticles.length}`;
+};
+
+spawnBtn.addEventListener('click', () => {
+  for (let i = 0; i < 5; i++) {
+    const p = particlePool.get();
+    p.init();
+    activeParticles.push(p);
+  }
+  render();
+});
+
+killBtn.addEventListener('click', () => {
+  for (let i = 0; i < 3; i++) {
+    if (activeParticles.length > 0) {
+      const p = activeParticles.pop();
+      p.reset();
+      particlePool.release(p);
+    }
+  }
+  render();
+});
+
+render();
+</file>
+
+<file path="demo/gameplay/js/spatialHash-demo.js">
+import { SpatialHash } from '@gameplay/spatialHash.js';
+
+const out = document.getElementById('output');
+const btn = document.getElementById('queryBtn');
+
+// Create a grid with 100x100 pixel cells
+const grid = new SpatialHash(100);
+const totalEntities = 10000;
+
+// Populate the world
+for (let i = 0; i < totalEntities; i++) {
+  grid.insert({
+    id: i,
+    x: Math.random() * 2000, 
+    y: Math.random() * 2000,
+    w: 10,
+    h: 10
+  });
+}
+
+out.textContent = `World Populated.\n`;
+out.textContent += `Total Entities in memory: ${totalEntities}\n`;
+out.textContent += `World Size: 2000x2000\n\n`;
+out.textContent += `Ready to query.\n`;
+
+btn.addEventListener('click', () => {
+  const start = performance.now();
+  
+  // Query a small 150x150 area in the middle of the world
+  const results = grid.query(1000, 1000, 150, 150);
+  
+  const end = performance.now();
+  
+  out.textContent += `\nQueried 150x150 area at (1000, 1000)...\n`;
+  out.textContent += `Found ${results.length} entities nearby.\n`;
+  out.textContent += `Query took ${(end - start).toFixed(2)} ms.\n`;
+});
+</file>
+
+<file path="demo/gameplay/js/stateMachine-demo.js">
+import { StateMachine } from '@gameplay/stateMachine.js';
+
+const out = document.getElementById('output');
+const log = (msg) => out.textContent += msg + '\n';
+
+const fsm = new StateMachine();
+
+fsm.add('idle', {
+  enter: () => log('[ENTER] Idle: Looking around.'),
+  update: (dt) => log(`[UPDATE] Idle: Resting for ${dt}ms.`),
+  exit: () => log('[EXIT] Idle: Spotted something!')
+});
+
+fsm.add('chase', {
+  enter: () => log('[ENTER] Chase: Running towards target!'),
+  update: (dt) => log(`[UPDATE] Chase: Closing distance...`),
+  exit: () => log('[EXIT] Chase: In range.')
+});
+
+fsm.add('attack', {
+  enter: () => log('[ENTER] Attack: Swinging weapon!'),
+  update: (dt) => log(`[UPDATE] Attack: Dealing damage!`),
+  exit: () => log('[EXIT] Attack: Stepping back.')
+});
+
+document.getElementById('btnIdle').addEventListener('click', () => {
+  out.textContent = '';
+  fsm.change('idle');
+  fsm.update(16);
+});
+
+document.getElementById('btnChase').addEventListener('click', () => {
+  out.textContent = '';
+  fsm.change('chase');
+  fsm.update(16);
+});
+
+document.getElementById('btnAttack').addEventListener('click', () => {
+  out.textContent = '';
+  fsm.change('attack');
+  fsm.update(16);
+});
+
+// Initial state
+fsm.change('idle');
+</file>
+
+<file path="demo/gameplay/camera-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Demo</title>
+  <style>
+    canvas { border: 1px solid #444; background: #222; cursor: crosshair; }
+    .controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Camera Demo</h3>
+  
+  <div class="controls">
+    <button id="shakeBtn">Screen Shake</button>
+    <button id="zoomInBtn">Zoom In</button>
+    <button id="zoomOutBtn">Zoom Out</button>
+  </div>
+  
+  <canvas id="gameCanvas" width="400" height="300"></canvas>
+  <p>Move mouse over canvas to move the target.</p>
+  
+  <script type="module" src="./js/camera-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/gameplay/collision-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Collision Demo</title>
+</head>
+<body>
+  <h3>Collision Demo</h3>
+  <button id="moveBtn">Move B Shapes Right</button>
+  <pre id="output"></pre>
+  <script type="module" src="./js/collision-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/gameplay/pool-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pool Demo</title>
+</head>
+<body>
+  <h3>Object Pool Demo</h3>
+  <button id="spawnBtn">Spawn 5 Particles</button>
+  <button id="killBtn">Kill 3 Particles</button>
+  <pre id="output"></pre>
+  <script type="module" src="./js/pool-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/gameplay/stateMachine-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>State Machine Demo</title>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>State Machine Demo (Enemy AI)</h3>
+  
+  <button id="btnIdle">Force Idle</button>
+  <button id="btnChase">Force Chase</button>
+  <button id="btnAttack">Force Attack</button>
+  
+  <pre id="output"></pre>
+  <script type="module" src="./js/stateMachine-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="gameplay/camera.js">
+// 2D Camera with smooth following, screen shake, and zoom capabilities.
+// const cam = new Camera(800, 600);
+// cam.follow(player, 0.1);
+// cam.apply(ctx);
+
+export class Camera {
+  constructor(viewportWidth, viewportHeight) {
+    this.width = viewportWidth;
+    this.height = viewportHeight;
+    this.x = 0;
+    this.y = 0;
+    this.zoom = 1;
+    
+    this.shakeTimer = 0;
+    this.shakeIntensity = 0;
+    this.offsetX = 0;
+    this.offsetY = 0;
+  }
+
+  follow(target, lerp = 1) {
+    const targetX = target.x - this.width / (2 * this.zoom);
+    const targetY = target.y - this.height / (2 * this.zoom);
+    
+    this.x += (targetX - this.x) * lerp;
+    this.y += (targetY - this.y) * lerp;
+  }
+
+  shake(durationMs, intensity) {
+    this.shakeTimer = durationMs;
+    this.shakeIntensity = intensity;
+  }
+
+  setZoom(level) {
+    this.zoom = Math.max(0.1, level);
+  }
+
+  update(dt) {
+    if (this.shakeTimer > 0) {
+      this.shakeTimer -= dt;
+      this.offsetX = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+      this.offsetY = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+    } else {
+      this.offsetX = 0;
+      this.offsetY = 0;
+      this.shakeTimer = 0;
+    }
+  }
+
+  apply(ctx) {
+    // Reset transform, then apply zoom and translation
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-this.x + this.offsetX, -this.y + this.offsetY);
+  }
+}
+</file>
+
+<file path="gameplay/collision.js">
+// Checks overlaps between geometric shapes like circles and bounding boxes.
+// import { collision } from '@gameplay/collision.js';
+// collision.boxBox({x: 0, y: 0, w: 10, h: 10}, {x: 5, y: 5, w: 10, h: 10});
+
+export const collision = {
+  circleCircle(c1, c2) {
+    const dx = c1.x - c2.x;
+    const dy = c1.y - c2.y;
+    const distance = Math.hypot(dx, dy);
+    return distance < (c1.r + c2.r);
+  },
+
+  boxBox(b1, b2) {
+    return (
+      b1.x < b2.x + b2.w &&
+      b1.x + b1.w > b2.x &&
+      b1.y < b2.y + b2.h &&
+      b1.y + b1.h > b2.y
+    );
+  },
+
+  circleBox(c, b) {
+    const testX = c.x < b.x ? b.x : (c.x > b.x + b.w ? b.x + b.w : c.x);
+    const testY = c.y < b.y ? b.y : (c.y > b.y + b.h ? b.y + b.h : c.y);
+    const dx = c.x - testX;
+    const dy = c.y - testY;
+    return Math.hypot(dx, dy) < c.r;
+  }
+};
+</file>
+
+<file path="gameplay/spatialHash.js">
+// Fast 2D spatial queries to find nearby objects without checking everything.
+// const grid = new SpatialHash(100); // 100x100 cell size
+// grid.insert({ id: 1, x: 10, y: 10, w: 5, h: 5 });
+// const nearby = grid.query(0, 0, 50, 50);
+
+export class SpatialHash {
+  constructor(cellSize) {
+    this.cellSize = cellSize;
+    this.cells = new Map();
+  }
+
+  insert(client) {
+    const minX = Math.floor(client.x / this.cellSize);
+    const minY = Math.floor(client.y / this.cellSize);
+    const maxX = Math.floor((client.x + client.w) / this.cellSize);
+    const maxY = Math.floor((client.y + client.h) / this.cellSize);
+
+    client._cells = [];
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        const key = `${x},${y}`;
+        if (!this.cells.has(key)) {
+          this.cells.set(key, new Set());
+        }
+        this.cells.get(key).add(client);
+        client._cells.push(key);
+      }
+    }
+  }
+
+  remove(client) {
+    if (!client._cells) return;
+    for (const key of client._cells) {
+      const cell = this.cells.get(key);
+      if (cell) {
+        cell.delete(client);
+        if (cell.size === 0) this.cells.delete(key);
+      }
+    }
+    client._cells = [];
+  }
+
+  update(client) {
+    this.remove(client);
+    this.insert(client);
+  }
+
+  query(x, y, w, h) {
+    const minX = Math.floor(x / this.cellSize);
+    const minY = Math.floor(y / this.cellSize);
+    const maxX = Math.floor((x + w) / this.cellSize);
+    const maxY = Math.floor((y + h) / this.cellSize);
+
+    const results = new Set();
+    for (let cx = minX; cx <= maxX; cx++) {
+      for (let cy = minY; cy <= maxY; cy++) {
+        const cell = this.cells.get(`${cx},${cy}`);
+        if (cell) {
+          for (const client of cell) {
+            results.add(client);
+          }
+        }
+      }
+    }
+    return Array.from(results);
+  }
+}
+</file>
+
+<file path="gameplay/stateMachine.js">
+// Finite State Machine for managing entity behaviors and game flows.
+// fsm.add('idle', { enter: () => {}, update: (dt) => {}, exit: () => {} });
+// fsm.change('idle');
+
+export class StateMachine {
+  constructor() {
+    this.states = new Map();
+    this.current = null;
+    this.currentStateName = '';
+  }
+
+  add(name, config) {
+    this.states.set(name, config);
+  }
+
+  change(name, enterParams) {
+    if (!this.states.has(name)) return;
+
+    if (this.current && this.current.exit) {
+      this.current.exit();
+    }
+
+    this.currentStateName = name;
+    this.current = this.states.get(name);
+
+    if (this.current.enter) {
+      this.current.enter(enterParams);
+    }
+  }
+
+  update(dt) {
+    if (this.current && this.current.update) {
+      this.current.update(dt);
+    }
+  }
+}
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="index.js">
+
+</file>
+
+<file path="package.json">
+{
+  "name": "gamekit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite';
+import { fileURLToPath, URL } from 'url';
+
+export default defineConfig({
+  server: {
+    open: true,
+  },
+  resolve: {
+    alias: {
+      '@core': fileURLToPath(new URL('./core', import.meta.url)),
+      '@gameplay': fileURLToPath(new URL('./gameplay', import.meta.url)),
+      '@ai': fileURLToPath(new URL('./ai', import.meta.url)),
+      '@world': fileURLToPath(new URL('./world', import.meta.url)),
+      '@ui': fileURLToPath(new URL('./ui', import.meta.url))
+    }
+  }
+});
+</file>
+
+<file path="core/events.js">
+// Global event bus.
+// const unsubscribe = events.on('death', () => {});
+
+class EventEmitter {
+  constructor() {
+    this.listeners = new Map();
+  }
+
+  on(event, callback) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event).push(callback);
+    return () => this.off(event, callback);
+  }
+
+  off(event, callback) {
+    if (!this.listeners.has(event)) return;
+    const callbacks = this.listeners.get(event).filter(cb => cb !== callback);
+    this.listeners.set(event, callbacks);
+  }
+
+  emit(event, data) {
+    if (!this.listeners.has(event)) return;
+    const callbacks = [...this.listeners.get(event)];
+    for (const callback of callbacks) {
+      callback(data);
+    }
+  }
+}
+
+export const events = new EventEmitter();
+</file>
+
+<file path="core/input.js">
+// Maps physical keyboard and mouse inputs to logical game actions.
+
+class InputManager {
+  constructor() {
+    this.bindings = new Map();
+    this.state = new Map();
+    this.prevState = new Map();
+    this.mouse = { x: 0, y: 0 };
+    this.targetElement = document.body;
+
+    window.addEventListener('keydown', (e) => this.state.set(e.code, true));
+    window.addEventListener('keyup', (e) => this.state.set(e.code, false));
+    window.addEventListener('mousedown', (e) => this.state.set(`Mouse${e.button}`, true));
+    window.addEventListener('mouseup', (e) => this.state.set(`Mouse${e.button}`, false));
+    
+    window.addEventListener('blur', () => {
+      this.state.clear();
+      this.prevState.clear();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      const rect = this.targetElement.getBoundingClientRect();
+      this.mouse.x = e.clientX - rect.left;
+      this.mouse.y = e.clientY - rect.top;
+    });
+  }
+
+  setTarget(element) {
+    this.targetElement = element;
+  }
+
+  bind(action, keys) {
+    this.bindings.set(action, Array.isArray(keys) ? keys : [keys]);
+  }
+
+  isDown(action) {
+    const keys = this.bindings.get(action) || [];
+    return keys.some(key => this.state.get(key));
+  }
+
+  isPressed(action) {
+    const keys = this.bindings.get(action) || [];
+    return keys.some(key => this.state.get(key) && !this.prevState.get(key));
+  }
+
+  isReleased(action) {
+    const keys = this.bindings.get(action) || [];
+    return keys.some(key => !this.state.get(key) && this.prevState.get(key));
+  }
+
+  update() {
+    this.prevState.clear();
+    for (const [key, value] of this.state) {
+      this.prevState.set(key, value);
+    }
+  }
+}
+
+export const input = new InputManager();
+</file>
+
+<file path="core/loop.js">
+// Fixed-timestep game loop for stable physics and framerate-independent updates.
+// const loop = new GameLoop((dt) => update(dt), () => render());
+// loop.start();
+// console.log(loop.fps);
+
+export class GameLoop {
+  constructor(updateFn, renderFn, targetFps = 60) {
+    this.updateFn = updateFn;
+    this.renderFn = renderFn;
+    this.step = 1000 / targetFps;
+    this.lastTime = 0;
+    this.accumulator = 0;
+    this.rafId = null;
+    this.isRunning = false;
+
+    this.fps = 0;
+    this._frameCount = 0;
+    this._lastFpsTime = 0;
+  }
+
+  start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    const now = performance.now();
+    this.lastTime = now;
+    this._lastFpsTime = now;
+    this._frameCount = 0;
+    this.rafId = requestAnimationFrame((time) => this.frame(time));
+  }
+
+  stop() {
+    this.isRunning = false;
+    cancelAnimationFrame(this.rafId);
+  }
+
+  frame(currentTime) {
+    if (!this.isRunning) return;
+
+    let deltaTime = currentTime - this.lastTime;
+    this.lastTime = currentTime;
+
+    if (deltaTime > 250) {
+      deltaTime = 250;
+    }
+
+    this.accumulator += deltaTime;
+
+    while (this.accumulator >= this.step) {
+      this.updateFn(this.step);
+      this.accumulator -= this.step;
+    }
+
+    this.renderFn();
+
+    this._frameCount++;
+    if (currentTime - this._lastFpsTime >= 1000) {
+      this.fps = this._frameCount;
+      this._frameCount = 0;
+      this._lastFpsTime = currentTime;
+    }
+
+    this.rafId = requestAnimationFrame((time) => this.frame(time));
+  }
+}
+</file>
+
+<file path="core/timer.js">
+// Handles in-game delays, cooldowns, and repeating intervals based on delta time.
+
+class TimerManager {
+  constructor() {
+    this.timers = [];
+  }
+
+  add(durationMs, onComplete, onUpdate = null) {
+    const timer = { duration: durationMs, elapsed: 0, onComplete, onUpdate, isEvery: false, marked: false };
+    this.timers.push(timer);
+    return timer;
+  }
+
+  every(durationMs, onTick) {
+    const timer = { duration: durationMs, elapsed: 0, onComplete: onTick, isEvery: true, marked: false };
+    this.timers.push(timer);
+    return timer;
+  }
+
+  cancel(timerRef) {
+    if (timerRef) timerRef.marked = true;
+  }
+
+  update(dt) {
+    const active = [];
+
+    for (const t of this.timers) {
+      if (t.marked) continue;
+
+      t.elapsed += dt;
+      
+      if (t.onUpdate) {
+        t.onUpdate(Math.min(t.elapsed / t.duration, 1));
+      }
+
+      if (t.elapsed >= t.duration) {
+        if (t.onComplete) t.onComplete();
+        
+        if (t.isEvery && !t.marked) {
+          t.elapsed -= t.duration;
+          active.push(t);
+        }
+      } else {
+        active.push(t);
+      }
+    }
+
+    this.timers = active;
+  }
+}
+
+export const timer = new TimerManager();
+</file>
+
+<file path="demo/gameplay/js/stats-demo.js">
+import { Stats } from '@gameplay/stats.js';
+
+const out = document.getElementById('output');
+const dmgBtn = document.getElementById('dmgBtn');
+const healBtn = document.getElementById('healBtn');
+const buffBtn = document.getElementById('buffBtn');
+const buffBtn2 = document.getElementById('buffBtn2');
+
+const hero = new Stats({ maxHealth: 100, speed: 10, damage: 25 });
+let hasBuff = false;
+
+const render = () => {
+  let text = `--- Hero Stats ---\n`;
+  text += `HP: ${hero.health} / ${hero.get('maxHealth')}\n`;
+  text += `Speed: ${hero.get('speed')}\n`;
+  text += `Damage: ${hero.get('damage')}\n\n`;
+  text += `Active Speed Buff: ${hasBuff ? 'YES (+50%)' : 'NO'}\n`;
+  
+  if (hero.health === 0) {
+    text += `\n[ HERO DIED ]`;
+  }
+  
+  out.textContent = text;
+};
+
+dmgBtn.addEventListener('click', () => {
+  hero.takeDamage(15);
+  render();
+});
+
+healBtn.addEventListener('click', () => {
+  hero.heal(20);
+  render();
+});
+
+buffBtn.addEventListener('click', () => {
+  hasBuff = !hasBuff;
+  if (hasBuff) {
+    hero.addModifier('sprint', 'speed', 'mult', 0.5);
+  } else {
+    hero.removeModifier('sprint');
+  }
+  render();
+});
+
+buffBtn2.addEventListener('click', () => {
+  hasBuff = !hasBuff;
+  if (hasBuff) {
+    hero.addModifier('maxHealthBuff', 'maxHealth', 'add', 50);
+  } else {
+    hero.removeModifier('maxHealthBuff');
+  }
+  render();
+});
+
+render();
+</file>
+
+<file path="demo/gameplay/spatialHash-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spatial Hash Demo</title>
+</head>
+<body>
+  <h3>Spatial Hash Demo</h3>
+  <button id="queryBtn">Run Area Query</button>
+  <pre id="output"></pre>
+  <script type="module" src="./js/spatialHash-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="demo/gameplay/stats-demo.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stats Demo</title>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Stats & Modifiers Demo</h3>
+  
+  <button id="dmgBtn">Take 15 Damage</button>
+  <button id="healBtn">Heal 20 HP</button>
+  <button id="buffBtn">Toggle +50% Speed Buff</button>
+  <button id="buffBtn2">Toggle +50 max HP buff</button>
+  
+  <pre id="output"></pre>
+  <script type="module" src="./js/stats-demo.js"></script>
+</body>
+</html>
+</file>
+
+<file path="gameplay/pool.js">
+// Recycles objects to prevent memory allocation overhead.
+
+export class Pool {
+  constructor(factoryFn, initFn = null, resetFn = null, initialSize = 0) {
+    this.factoryFn = factoryFn;
+    this.initFn = initFn;
+    this.resetFn = resetFn;
+    this.items = [];
+    this.inPool = new WeakSet();
+    
+    for (let i = 0; i < initialSize; i++) {
+      const item = this.factoryFn();
+      this.inPool.add(item);
+      this.items.push(item);
+    }
+  }
+
+  get(...args) {
+    const item = this.items.length > 0 ? this.items.pop() : this.factoryFn();
+    this.inPool.delete(item);
+    if (this.initFn) this.initFn(item, ...args);
+    return item;
+  }
+
+  release(item) {
+    if (this.inPool.has(item)) return;
+    if (this.resetFn) this.resetFn(item);
+    this.inPool.add(item);
+    this.items.push(item);
+  }
+
+  clear() {
+    this.items.length = 0;
+    this.inPool = new WeakSet();
+  }
+}
+</file>
+
+<file path="gameplay/stats.js">
+// Manages entity health, base attributes, and temporary modifiers.
+// type: 'add' (flat value) or 'percent' (additive percentage, e.g., 0.5 for +50%)
+
+export class Stats {
+  constructor(baseStats = {}) {
+    this.base = { ...baseStats };
+    this.modifiers = new Map();
+    this.health = this.base.maxHealth || 1;
+    this.dead = false;
+  }
+
+  addModifier(id, stat, type, value) {
+    this.modifiers.set(id, { stat, type, value });
+  }
+
+  removeModifier(id) {
+    this.modifiers.delete(id);
+    this.health = Math.min(this.health, this.get('maxHealth'));
+  }
+
+  get(stat) {
+    let val = this.base[stat] || 0;
+    let percent = 1;
+
+    for (const mod of this.modifiers.values()) {
+      if (mod.stat === stat) {
+        if (mod.type === 'add') val += mod.value;
+        if (mod.type === 'percent') percent += mod.value;
+      }
+    }
+
+    return val * percent;
+  }
+
+  takeDamage(amount) {
+    if (this.dead) return false;
+    this.health = Math.max(0, this.health - amount);
+    if (this.health === 0) { 
+      this.dead = true; 
+      return true; 
+    }
+    return false;
+  }
+
+  heal(amount) {
+    if (this.dead) return;
+    this.health = Math.min(this.get('maxHealth'), this.health + amount);
+  }
+}
+</file>
+
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameKit Demos</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #1a1a1a; color: #eee; }
+    h1 { border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+    nav a { color: #00ffcc; text-decoration: none; display: block; margin: 0.5rem 0; font-size: 1.2rem; }
+    nav a:hover { text-decoration: underline; color: #fff; }
+    h2 { color: #888; margin-top: 2rem; border-bottom: 1px dashed #444; padding-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>GameKit Modules</h1>
+  <nav>
+    <h2>Core</h2>
+    <a href="/demo/core/vec2-demo.html">Vec2 Demo</a>
+    <a href="/demo/core/events-demo.html">Events Demo</a>
+    <a href="/demo/core/loop-demo.html">Loop Demo</a>
+    <a href="/demo/core/input-demo.html">Input Demo</a>
+    <a href="/demo/core/timer-demo.html">Timer Demo</a>
+    <a href="/demo/core/random-demo.html">Random Demo</a>
+    
+    <h2>Gameplay</h2>
+    <a href="/demo/gameplay/pool-demo.html">Pool Demo</a>
+    <a href="/demo/gameplay/spatialHash-demo.html">Spatial Hash Demo</a>
+    <a href="/demo/gameplay/collision-demo.html">Collision Demo</a>
+    <a href="/demo/gameplay/stats-demo.html">Stats Demo</a>
+    <a href="/demo/gameplay/stateMachine-demo.html">State Machine Demo</a>
+    <a href="/demo/gameplay/camera-demo.html">Camera Demo</a>
+  </nav>
+</body>
+</html>
+</file>
+
+</files>

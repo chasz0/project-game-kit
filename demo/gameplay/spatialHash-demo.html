@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Spatial Hash Demo</title>
+  <style>
+    canvas { border: 1px solid #444; background: #111; cursor: crosshair; display: block; margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h3>Spatial Hash Demo</h3>
-  <button id="queryBtn">Run Area Query</button>
+  <a href="/">← Back to Hub</a>
+  <h3>Spatial Hash Demo (5,000 Moving Entities)</h3>
+  <p>Move mouse over canvas to query nearby entities.</p>
+  <canvas id="canvas" width="600" height="400"></canvas>
   <pre id="output"></pre>
   <script type="module" src="./js/spatialHash-demo.js"></script>
 </body>

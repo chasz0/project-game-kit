@@ -9,29 +9,34 @@ class Particle {
     this.id = Math.random().toString(36).substring(2, 7);
     this.active = false;
   }
-  
+
   init() {
     this.active = true;
   }
-  
+
   reset() {
     this.active = false;
   }
 }
 
-const particlePool = new Pool(() => new Particle(), 10);
+// The pool now calls init() on get() and reset() on release() for us.
+const particlePool = new Pool({
+  create: () => new Particle(),
+  init: (p) => p.init(),
+  reset: (p) => p.reset(),
+  size: 10,
+});
+
 const activeParticles = [];
 
 const render = () => {
-  out.textContent = `Pool Size (Inactive): ${particlePool.items.length}\nActive Particles: ${activeParticles.length}\n\n`;
-  out.textContent += `Total objects in memory: ${particlePool.items.length + activeParticles.length}`;
+  out.textContent = `Idle in pool: ${particlePool.available}\nIn use: ${particlePool.inUse}\n\n`;
+  out.textContent += `Total objects in memory: ${particlePool.available + particlePool.inUse}`;
 };
 
 spawnBtn.addEventListener('click', () => {
   for (let i = 0; i < 5; i++) {
-    const p = particlePool.get();
-    p.init();
-    activeParticles.push(p);
+    activeParticles.push(particlePool.get());
   }
   render();
 });
@@ -39,9 +44,7 @@ spawnBtn.addEventListener('click', () => {
 killBtn.addEventListener('click', () => {
   for (let i = 0; i < 3; i++) {
     if (activeParticles.length > 0) {
-      const p = activeParticles.pop();
-      p.reset();
-      particlePool.release(p);
+      particlePool.release(activeParticles.pop());
     }
   }
   render();
