@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Collision Demo</title>
+  <style>
+    canvas { border: 1px solid #444; background: #151515; cursor: none; display: block; margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h3>Collision Demo</h3>
-  <button id="moveBtn">Move B Shapes Right</button>
+  <a href="/">← Back to Hub</a>
+  <h3>Collision & Penetration Resolution Demo</h3>
+  <p>Move mouse to push the swarm and test wall/circle collisions. Click to toggle mouse shape (Circle / Box).</p>
+  <canvas id="canvas" width="600" height="400"></canvas>
   <pre id="output"></pre>
   <script type="module" src="./js/collision-demo.js"></script>
 </body>
