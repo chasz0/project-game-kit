@@ -12,7 +12,7 @@ const update = (dt) => {
 
 const render = () => {
   frames++;
-  out.textContent = `Updates (Fixed 60hz): ${ticks}\nRenders (Browser FPS): ${frames}`;
+  out.textContent = `Updates (Fixed 60hz): ${ticks}\nRenders (Total): ${frames}\nCurrent FPS: ${loop.fps}`;
 };
 
 const loop = new GameLoop(update, render, 60);
