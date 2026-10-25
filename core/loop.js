@@ -1,7 +1,9 @@
-// Fixed-timestep game loop for stable physics and framerate-independent updates.
-// const loop = new GameLoop((dt) => update(dt), () => render());
-// loop.start();
-// console.log(loop.fps);
+// Fixed-timestep game loop.
+// updateFn(dt) receives fixed step in milliseconds (default 16.67ms at 60Hz).
+// renderFn(alpha) receives interpolation factor in [0, 1) for smooth rendering.
+//
+//   const loop = new GameLoop((dt) => update(dt), (alpha) => render(alpha));
+//   loop.start();
 
 export class GameLoop {
   constructor(updateFn, renderFn, targetFps = 60) {
@@ -30,7 +32,10 @@ export class GameLoop {
 
   stop() {
     this.isRunning = false;
-    cancelAnimationFrame(this.rafId);
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   frame(currentTime) {
@@ -39,9 +44,7 @@ export class GameLoop {
     let deltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
 
-    if (deltaTime > 250) {
-      deltaTime = 250;
-    }
+    if (deltaTime > 250) deltaTime = 250;
 
     this.accumulator += deltaTime;
 
@@ -50,7 +53,8 @@ export class GameLoop {
       this.accumulator -= this.step;
     }
 
-    this.renderFn();
+    const alpha = this.accumulator / this.step;
+    this.renderFn(alpha);
 
     this._frameCount++;
     if (currentTime - this._lastFpsTime >= 1000) {

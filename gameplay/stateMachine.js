@@ -1,6 +1,9 @@
-// Finite State Machine for managing entity behaviors and game flows.
-// fsm.add('idle', { enter: () => {}, update: (dt) => {}, exit: () => {} });
-// fsm.change('idle');
+// Finite State Machine for entity AI and game state transitions.
+//
+//   const fsm = new StateMachine();
+//   fsm.add('idle', { enter: () => {}, update: (dt) => {}, exit: () => {} });
+//   fsm.change('idle');
+//   fsm.update(dt);
 
 export class StateMachine {
   constructor() {
@@ -9,12 +12,19 @@ export class StateMachine {
     this.currentStateName = '';
   }
 
-  add(name, config) {
+  add(name, config = {}) {
     this.states.set(name, config);
+    return this;
+  }
+
+  has(name) {
+    return this.states.has(name);
   }
 
   change(name, enterParams) {
-    if (!this.states.has(name)) return;
+    if (!this.states.has(name)) {
+      throw new Error(`StateMachine: unknown state "${name}"`);
+    }
 
     if (this.current && this.current.exit) {
       this.current.exit();

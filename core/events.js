@@ -1,31 +1,55 @@
-// Global event bus.
-// const unsubscribe = events.on('death', () => {});
+// Pub/sub event bus for decoupled communication between game systems.
+//
+//   const off = events.on('enemyKilled', (e) => addScore(e.points));
+//   events.emit('enemyKilled', { points: 10 });
+//   off(); // unsubscribe
 
-class EventEmitter {
+export class EventEmitter {
   constructor() {
     this.listeners = new Map();
   }
 
   on(event, callback) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, []);
+    if (typeof callback !== 'function') {
+      throw new TypeError('EventEmitter.on: callback must be a function');
     }
-    this.listeners.get(event).push(callback);
+    let list = this.listeners.get(event);
+    if (!list) {
+      list = [];
+      this.listeners.set(event, list);
+    }
+    list.push(callback);
     return () => this.off(event, callback);
   }
 
+  once(event, callback) {
+    const off = this.on(event, (data) => {
+      off();
+      callback(data);
+    });
+    return off;
+  }
+
   off(event, callback) {
-    if (!this.listeners.has(event)) return;
-    const callbacks = this.listeners.get(event).filter(cb => cb !== callback);
-    this.listeners.set(event, callbacks);
+    const list = this.listeners.get(event);
+    if (!list) return;
+    const idx = list.indexOf(callback);
+    if (idx !== -1) list.splice(idx, 1);
+    if (list.length === 0) this.listeners.delete(event);
   }
 
   emit(event, data) {
-    if (!this.listeners.has(event)) return;
-    const callbacks = [...this.listeners.get(event)];
-    for (const callback of callbacks) {
-      callback(data);
+    const list = this.listeners.get(event);
+    if (!list || list.length === 0) return;
+    const snapshot = list.slice();
+    for (let i = 0; i < snapshot.length; i++) {
+      snapshot[i](data);
     }
+  }
+
+  clear(event) {
+    if (event !== undefined) this.listeners.delete(event);
+    else this.listeners.clear();
   }
 }
 
