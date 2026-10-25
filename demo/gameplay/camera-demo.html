@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Demo</title>
+  <style>
+    canvas { border: 1px solid #444; background: #222; cursor: crosshair; }
+    .controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Camera Demo</h3>
+  
+  <div class="controls">
+    <button id="shakeBtn">Screen Shake</button>
+    <button id="zoomInBtn">Zoom In</button>
+    <button id="zoomOutBtn">Zoom Out</button>
+  </div>
+  
+  <canvas id="gameCanvas" width="400" height="300"></canvas>
+  <p>Move mouse over canvas to move the target.</p>
+  
+  <script type="module" src="./js/camera-demo.js"></script>
+</body>
+</html>
