@@ -1,0 +1,26 @@
+- fix some ai demo
+-- Steering
+--- Flee is weird, they run, yes, but there should be limit, no? they will only get away from you, on certain distance.
+--- Maybe more customizeable demo?
+-- LineOfSight
+--- improve the demo?
+--- also make player line of sight implementation?
+- add more ai demo, custimizeable?
+
+
+
+
+--- NEXT TASK --- 
+13. abilities.js: weapons and abilities with cooldowns.
+14. spawner.js: waves and spawn rules.
+15. progression.js: XP, levels, and upgrade choices.
+16. loot.js and inventory.js.
+13. abilities.js: weapons and abilities with cooldowns.
+14. spawner.js: waves and spawn rules.
+15. progression.js: XP, levels, and upgrade choices.
+16. loot.js and inventory.js.
+
+
+
+-- POLISH and TEST --
+Vite Test configuration

@@ -207,6 +207,14 @@
       <div class="grid" id="gameplay-grid"></div>
     </section>
 
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Tier 3: AI &amp; Navigation Systems</h2>
+        <span>ai/</span>
+      </div>
+      <div class="grid" id="ai-grid"></div>
+    </section>
+
     <section class="inspector-section" id="live-inspector">
       <div class="tier-header" style="margin-bottom:1rem;">
         <h2>Live Editable Code Workbench (3 Sandboxes per Module)</h2>
@@ -222,6 +230,7 @@
 
     const coreGrid = document.getElementById('core-grid');
     const gameplayGrid = document.getElementById('gameplay-grid');
+    const aiGrid = document.getElementById('ai-grid');
     const tabsEl = document.getElementById('inspector-tabs');
     const bodyEl = document.getElementById('inspector-body');
 
@@ -244,6 +253,7 @@
 
     coreGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 1')).map(renderCard).join('');
     gameplayGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 2')).map(renderCard).join('');
+    aiGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 3')).map(renderCard).join('');
 
     tabsEl.innerHTML = MODULE_DOCS.map((m) => `
       <button class="tab-btn" data-tab="${m.id}">${m.name}</button>

@@ -732,6 +732,170 @@ cam.update(150);
 console.log('At 250ms offset:', cam.offsetX, cam.offsetY);`
       }
     ]
+  },
+  {
+    id: 'steering',
+    name: 'steering',
+    tier: 'Tier 3: AI',
+    file: 'ai/steering.js',
+    demoUrl: '/demo/ai/steering-demo.html',
+    importCode: "import { steering } from '@ai/steering.js';",
+    summary: 'Zero-allocation steering behaviors (seek, flee, arrive, pursue, orbit, separate, flock) and force integration for autonomous agents.',
+    api: [
+      { sig: 'steering.seek(agent, target, maxSpeed, out)', desc: 'Steers agent {x, y, vx, vy} toward target {x, y}.' },
+      { sig: 'steering.flee(agent, threat, maxSpeed, out)', desc: 'Steers agent directly away from threat.' },
+      { sig: 'steering.arrive(agent, target, maxSpeed, slowRadius, out)', desc: 'Decelerates smoothly inside slowRadius.' },
+      { sig: 'steering.pursue(agent, target, maxSpeed, maxPred, out)', desc: 'Intercepts a moving target using velocity prediction.' },
+      { sig: 'steering.orbit(agent, target, radius, maxSpeed, cw, out)', desc: 'Circles target at a fixed standoff radius.' },
+      { sig: 'steering.separate(agent, neighbors, sepDist, maxSpeed, out)', desc: 'Repels agent from crowding neighbors.' },
+      { sig: 'steering.flock(agent, neighbors, opts, out)', desc: 'Combines separation, alignment, and cohesion in one pass.' },
+      { sig: 'steering.applyForce(agent, force, maxForce, maxSpeed, dt)', desc: 'Clamps force, updates velocity, and advances position.' }
+    ],
+    examples: [
+      {
+        title: 'Seek & Force Integration Step',
+        tag: 'Example 1',
+        desc: 'Computes a seek steering force toward (300, 100) and integrates one 16ms physics frame.',
+        code: `const agent = { x: 100, y: 100, vx: 0, vy: 0 };
+const target = { x: 300, y: 100 };
+
+const force = steering.seek(agent, target, 200);
+steering.applyForce(agent, force, 500, 200, 16);
+
+console.log('Force:', force.x.toFixed(1), force.y.toFixed(1));
+console.log('Updated agent:', agent.x.toFixed(2), agent.vx.toFixed(1));`
+      },
+      {
+        title: 'Ranged Enemy Orbiting Behavior',
+        tag: 'Example 2',
+        desc: 'Steers a ranged enemy to circle the player at a 150px standoff distance.',
+        code: `const enemy = { x: 250, y: 100, vx: 0, vy: 0 };
+const player = { x: 100, y: 100 };
+
+const force = steering.orbit(enemy, player, 150, 180, true);
+console.log('Orbit tangent force:', force.x.toFixed(1), force.y.toFixed(1));`
+      },
+      {
+        title: 'Arrive Deceleration Inside Slow Radius',
+        tag: 'Example 3',
+        desc: 'Compares desired speed outside vs inside the 100px arrival slowing radius.',
+        code: `const target = { x: 200, y: 200 };
+const farAgent  = { x: 50,  y: 200, vx: 0, vy: 0 };
+const nearAgent = { x: 175, y: 200, vx: 0, vy: 0 };
+
+const fFar  = steering.arrive(farAgent, target, 200, 100);
+const fNear = steering.arrive(nearAgent, target, 200, 100);
+
+console.log('Outside radius force.x:', fFar.x.toFixed(1));
+console.log('25px from target force.x:', fNear.x.toFixed(1));`
+      }
+    ]
+  },
+  {
+    id: 'flowField',
+    name: 'FlowField',
+    tier: 'Tier 3: AI',
+    file: 'ai/flowField.js',
+    demoUrl: '/demo/ai/flowField-demo.html',
+    importCode: "import { FlowField } from '@ai/flowField.js';",
+    summary: 'BFS integration and direction vector grid backed by TypedArrays. Solves obstacle pathfinding for thousands of agents in O(1) lookup time per agent.',
+    api: [
+      { sig: 'new FlowField({ cols, rows, cellSize, originX, originY })', desc: 'Allocates TypedArray grids for walls, costs, and vectors.' },
+      { sig: 'field.clearWalls() / field.setWall(col, row, blocked)', desc: 'Clears or sets individual wall cells.' },
+      { sig: 'field.setObstacleRect(x, y, w, h, inflate = 0)', desc: 'Marks all cells overlapping a world box as walls.' },
+      { sig: 'field.compute(targetX, targetY)', desc: 'Runs BFS from target and populates normalized flow vectors.' },
+      { sig: 'field.sample(worldX, worldY, out)', desc: 'Returns the normalized {x, y} flow direction at world coords.' },
+      { sig: 'field.getDistance(worldX, worldY)', desc: 'Returns tile step count to the target (-1 if unreachable).' }
+    ],
+    examples: [
+      {
+        title: 'Computing & Sampling a Path Around a Wall',
+        tag: 'Example 1',
+        desc: 'Places a wall between (20, 100) and the goal at (180, 100) and samples the detour direction.',
+        code: `const field = new FlowField({ cols: 10, rows: 10, cellSize: 20 });
+field.setObstacleRect(80, 40, 20, 120);
+field.compute(180, 100);
+
+const dir = field.sample(60, 100);
+console.log('Detour vector around wall:', dir.x.toFixed(2), dir.y.toFixed(2));
+console.log('Steps to target:', field.getDistance(60, 100));`
+      },
+      {
+        title: 'Negative Arena Coordinates Support',
+        tag: 'Example 2',
+        desc: 'Configures originX/originY for centered arenas (-800 to +800).',
+        code: `const field = new FlowField({
+  cols: 40, rows: 40, cellSize: 40, originX: -800, originY: -800
+});
+field.compute(0, 0);
+
+const dir = field.sample(-400, -400);
+console.log('Flow from (-400, -400) to (0, 0):', dir.x.toFixed(2), dir.y.toFixed(2));`
+      },
+      {
+        title: 'Wall Ejection Fallback Sampling',
+        tag: 'Example 3',
+        desc: 'If an agent is pushed slightly inside a wall tile, sample() automatically steers toward the nearest open neighbor.',
+        code: `const field = new FlowField({ cols: 10, rows: 10, cellSize: 20 });
+field.setWall(3, 3, true);
+field.compute(160, 60);
+
+const escapeDir = field.sample(65, 65);
+console.log('Escape vector from wall tile:', escapeDir.x.toFixed(2), escapeDir.y.toFixed(2));`
+      }
+    ]
+  },
+  {
+    id: 'lineOfSight',
+    name: 'lineOfSight',
+    tier: 'Tier 3: AI',
+    file: 'ai/lineOfSight.js',
+    demoUrl: '/demo/ai/lineOfSight-demo.html',
+    importCode: "import { lineOfSight } from '@ai/lineOfSight.js';",
+    summary: 'Fast raycasting against boxes and circles, line-of-sight occlusion checks, and AI field-of-view cone queries.',
+    api: [
+      { sig: 'lineOfSight.hasLineOfSight(a, b, obstacles)', desc: 'Returns true if no box or circle blocks segment a -> b.' },
+      { sig: 'lineOfSight.raycast(x1, y1, x2, y2, obstacles, out)', desc: 'Returns closest hit {t, x, y, nx, ny, obstacle} or null.' },
+      { sig: 'lineOfSight.rayBox(x1, y1, x2, y2, box, out?)', desc: 'Slab test against top-left box {x, y, w, h}.' },
+      { sig: 'lineOfSight.rayCircle(x1, y1, x2, y2, circle, out?)', desc: 'Intersection against center circle {x, y, r}.' },
+      { sig: 'lineOfSight.inVisionCone(obs, angle, target, range, fov, obstacles?)', desc: 'Checks distance, FOV cone angle, and wall occlusion.' }
+    ],
+    examples: [
+      {
+        title: 'Checking Ranged Attack Line of Sight',
+        tag: 'Example 1',
+        desc: 'Tests whether a wall blocks a sniper shot between (0, 50) and (200, 50).',
+        code: `const sniper = { x: 0, y: 50 };
+const player = { x: 200, y: 50 };
+const walls = [{ x: 80, y: 20, w: 40, h: 60 }];
+
+console.log('Through wall LOS:', lineOfSight.hasLineOfSight(sniper, player, walls));
+console.log('Above wall LOS:', lineOfSight.hasLineOfSight({ x: 0, y: 5 }, { x: 200, y: 5 }, walls));`
+      },
+      {
+        title: 'Laser Raycast Impact Point & Surface Normal',
+        tag: 'Example 2',
+        desc: 'Finds the exact impact coordinates and surface normal against mixed box and circle obstacles.',
+        code: `const obstacles = [
+  { x: 150, y: 0, w: 40, h: 100 },
+  { x: 90, y: 50, r: 20 }
+];
+
+const hit = lineOfSight.raycast(0, 50, 300, 50, obstacles);
+console.log('Hit at:', hit.x.toFixed(1), hit.y.toFixed(1), '| Normal:', hit.nx, hit.ny);`
+      },
+      {
+        title: 'Sentry Vision Cone Detection',
+        tag: 'Example 3',
+        desc: 'Checks if a player is within a 200px, 90-degree (PI/2) vision cone facing right (0 rad).',
+        code: `const sentry = { x: 100, y: 100 };
+const inFront = { x: 220, y: 120 };
+const behind  = { x: 20,  y: 100 };
+
+console.log('Target in front:', lineOfSight.inVisionCone(sentry, 0, inFront, 200, Math.PI / 2));
+console.log('Target behind:  ', lineOfSight.inVisionCone(sentry, 0, behind,  200, Math.PI / 2));`
+      }
+    ]
   }
 ];
 

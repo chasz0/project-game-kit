@@ -11,3 +11,7 @@ export { collision } from './gameplay/collision.js';
 export { Stats } from './gameplay/stats.js';
 export { StateMachine } from './gameplay/stateMachine.js';
 export { Camera } from './gameplay/camera.js';
+
+export { steering } from './ai/steering.js';
+export { FlowField } from './ai/flowField.js';
+export { lineOfSight } from './ai/lineOfSight.js';
