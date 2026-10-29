@@ -3,146 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About &amp; Architecture — GameKit</title>
+  <title>About Me — Developer Profile</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
   <style>
-    :root {
-      --bg: #111318;
-      --panel: #1a1d24;
-      --border: #2b303c;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --accent: #00ffcc;
-      --accent-dim: rgba(0, 255, 204, 0.12);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    header {
-      border-bottom: 1px solid var(--border);
-      background: rgba(17, 19, 24, 0.9);
-    }
-    .nav-container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .brand {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .brand span {
-      color: var(--accent);
-      font-family: monospace;
-      font-size: 0.85rem;
-      background: var(--accent-dim);
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-    }
-    .nav-links { display: flex; gap: 1.5rem; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
-    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
-    main {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 4rem;
-    }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    .subtitle { color: var(--muted); margin-bottom: 2.5rem; font-size: 1.05rem; }
-    section {
+    .profile-hero {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 1.5rem;
+      align-items: center;
     }
-    h2 {
-      font-size: 1.2rem;
+    .avatar-placeholder {
+      width: 110px;
+      height: 110px;
+      border-radius: 10px;
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 0.5rem;
+    }
+    .hero-meta h1 {
+      font-size: 1.8rem;
       color: var(--accent);
+      margin: 0 0 0.25rem;
+    }
+    .hero-role {
+      font-family: monospace;
+      color: var(--muted);
+      font-size: 0.92rem;
       margin-bottom: 0.75rem;
     }
-    ul { padding-left: 1.25rem; color: var(--muted); }
-    li { margin-bottom: 0.5rem; }
-    li strong { color: var(--text); }
-    pre {
-      background: #0d0f13;
+    .hero-bio {
+      color: var(--text);
+      font-size: 0.94rem;
+      max-width: 720px;
+      margin: 0 0 1rem;
+    }
+    .contact-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .contact-links a {
+      background: var(--panel-alt);
+      color: var(--accent);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1rem;
-      overflow-x: auto;
-      font-size: 0.88rem;
-      color: #d1d7e0;
-      margin-top: 0.75rem;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-family: monospace;
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+    }
+    .contact-links a:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .tag-list span {
+      background: #080b12;
+      border: 1px solid var(--border-subtle);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+    }
+    .timeline-item {
+      border-left: 2px solid var(--border);
+      padding-left: 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-item h4 {
+      color: var(--accent);
+      font-size: 0.96rem;
+      margin: 0 0 0.15rem;
+    }
+    .timeline-item small {
+      font-family: monospace;
+      color: var(--muted);
+      font-size: 0.78rem;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+    .timeline-item p {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin: 0;
+    }
+    @media (max-width: 780px) {
+      .profile-hero { grid-template-columns: 1fr; }
+      .about-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body>
-  <header>
-    <div class="nav-container">
-      <a href="/" class="brand">GameKit <span>v0.2.0</span></a>
-      <nav class="nav-links">
+<body class="gk-doc-page">
+  <header class="gk-topbar">
+    <div class="gk-topbar-inner">
+      <a href="/" class="gk-brand">GameKit <span>v0.2.0</span></a>
+      <nav class="gk-pill-nav">
         <a href="/">Modules</a>
-        <a href="/demo/showcase/swarm-demo.html">12-Module Game</a>
-        <a href="/about.html" class="active">Architecture &amp; Docs</a>
+        <a href="/demo/showcase/swarm-demo.html">12-Module Swarm Game</a>
+        <a href="/about.html" class="active">About Me</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <h1>Architecture &amp; Conventions</h1>
-    <p class="subtitle">Built for high-entity swarm games and portable reuse across 2D web projects.</p>
-
-    <section>
-      <h2>Core Design Rules</h2>
-      <ul>
-        <li><strong>Zero Cross-Module Imports:</strong> Every file in <code>core/</code> and <code>gameplay/</code> stands completely alone. You can copy a single file into a game jam project or import the entire kit from <code>index.js</code>.</li>
-        <li><strong>Zero-Allocation Hot Paths:</strong> High-frequency methods like <code>SpatialHash.query()</code> and <code>collision.circleCircleInfo()</code> accept reusable output structures so 60Hz updates do not trigger garbage collection spikes.</li>
-        <li><strong>Class + Singleton Exports:</strong> Stateful managers (<code>EventEmitter</code>, <code>InputManager</code>, <code>TimerManager</code>, <code>Random</code>) export both their class and a convenience singleton.</li>
-        <li><strong>Deterministic Simulation:</strong> Physics runs inside a fixed-timestep accumulator (<code>GameLoop</code>), delays run on frame delta time (<code>TimerManager</code>), and randomness runs through a seeded PRNG (<code>Random</code>).</li>
-      </ul>
+  <main class="gk-container">
+    <!-- Developer Profile Hero (Fill in your details) -->
+    <section class="profile-hero">
+      <div class="avatar-placeholder">[Avatar / Photo]</div>
+      <div class="hero-meta">
+        <h1>[Your Name]</h1>
+        <div class="hero-role">[Your Role — e.g., Software Developer &bull; Systems &amp; Game Architecture]</div>
+        <p class="hero-bio">
+          [Short bio placeholder: Write 2–3 sentences about who you are, what you enjoy building from scratch, and your approach to software engineering, backend logic, and custom game engines.]
+        </p>
+        <div class="contact-links">
+          <a href="https://github.com/your-username" target="_blank">GitHub</a>
+          <a href="https://linkedin.com/in/your-profile" target="_blank">LinkedIn</a>
+          <a href="mailto:your.email@example.com">Email</a>
+          <a href="#">Portfolio / Resume</a>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <h2>Coordinate &amp; Shape Conventions</h2>
-      <ul>
-        <li><strong>Circles &amp; Points:</strong> Center-based <code>{ x, y, r }</code> or <code>{ x, y }</code>.</li>
-        <li><strong>Bounding Boxes:</strong> Top-left-based <code>{ x, y, w, h }</code>.</li>
-        <li><strong>SpatialHash Clients:</strong> Supports both center-based circles (<code>{ x, y, r }</code>) and top-left boxes (<code>{ x, y, w, h }</code>) automatically without mutating your entity objects.</li>
-      </ul>
-    </section>
+    <div class="about-grid">
+      <section class="gk-box">
+        <h2>Background &amp; Engineering Philosophy</h2>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:0.85rem;">
+          [Placeholder: Describe how you work—building modular systems from first principles, understanding low-level mechanics, and writing lean, zero-dependency code.]
+        </p>
+        <p style="color:var(--muted); font-size:0.9rem; margin:0;">
+          [Placeholder: Mention why you started <strong>GameKit</strong>—creating a reusable, standalone JavaScript game toolkit where every module is decoupled, benchmarked, and tested with its own sandbox.]
+        </p>
+      </section>
 
-    <section>
-      <h2>Quick Start (Front-Door Import)</h2>
-      <pre><code>import {
-  Vec2, events, GameLoop, input, timer, Random,
-  Pool, SpatialHash, collision, Stats, StateMachine, Camera
-} from './index.js';
+      <section class="gk-box">
+        <h2>Tech Stack &amp; Tools</h2>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:0.75rem;">Languages, Frameworks &amp; Databases:</p>
+        <div class="tag-list" style="margin-bottom:1.1rem;">
+          <span>JavaScript / TypeScript</span>
+          <span>HTML5 Canvas</span>
+          <span>Node.js</span>
+          <span>React / Vite</span>
+          <span>PHP / Laravel</span>
+          <span>Python</span>
+          <span>Rust / Tauri</span>
+          <span>PostgreSQL / MySQL</span>
+          <span>MongoDB / SQLite</span>
+        </div>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:0.75rem;">Interests &amp; Focus Areas:</p>
+        <div class="tag-list">
+          <span>Custom 2D Game Engines</span>
+          <span>Backend Architecture</span>
+          <span>Spatial Indexing &amp; Physics</span>
+          <span>Desktop &amp; Offline-First Apps</span>
+        </div>
+      </section>
+    </div>
 
-const rng = new Random('seed-123');
-const grid = new SpatialHash(64);
-const cam = new Camera(800, 600);
+    <div class="about-grid">
+      <section class="gk-box">
+        <h2>Experience &amp; Education</h2>
+        <div class="timeline-item">
+          <h4>[Job Title — e.g., Software Developer]</h4>
+          <small>[Company Name] &bull; [Start Date – Present]</small>
+          <p>[Placeholder: Brief summary of systems built, backend APIs, databases, or enterprise applications.]</p>
+        </div>
+        <div class="timeline-item">
+          <h4>[Freelance / Independent Projects]</h4>
+          <small>[Year – Present]</small>
+          <p>[Placeholder: Summary of client systems, custom tools, and full-stack projects.]</p>
+        </div>
+        <div class="timeline-item">
+          <h4>[Degree — e.g., BS Computer Science / Information Technology]</h4>
+          <small>[University Name] &bull; [Graduation Year / Honors]</small>
+          <p>[Placeholder: Capstone project, compiler design, or academic highlights.]</p>
+        </div>
+      </section>
 
-const loop = new GameLoop(
-  (dt) => {
-    timer.update(dt);
-    cam.update(dt);
-    input.update();
-  },
-  (alpha) => {
-    // render frame
-  }
-);
+      <section class="gk-box">
+        <h2>Featured Projects</h2>
+        <div class="timeline-item">
+          <h4>GameKit — Modular 2D Web Game Toolkit</h4>
+          <small>Vanilla JS &bull; HTML5 Canvas &bull; Vite</small>
+          <p>Zero-dependency toolkit for high-entity 2D games featuring spatial hashing, object pooling, collision manifolds, and fixed-timestep loops.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>[Project 2 Placeholder]</h4>
+          <small>[Tech Stack]</small>
+          <p>[Placeholder: One-sentence description of what the project does and the problem it solved.]</p>
+        </div>
+        <div class="timeline-item">
+          <h4>[Project 3 Placeholder]</h4>
+          <small>[Tech Stack]</small>
+          <p>[Placeholder: One-sentence description of what the project does and the problem it solved.]</p>
+        </div>
+      </section>
+    </div>
 
-loop.start();</code></pre>
+    <!-- Live Editable Sandbox right on the About Page -->
+    <section class="gk-box" style="margin-top:1.5rem;">
+      <h2>Try My Toolkit Live (Editable Sandbox)</h2>
+      <p style="color:var(--muted); font-size:0.88rem; margin-bottom:1rem;">
+        Edit the code below and click <strong>Run Code</strong> to test the reusable <code>CodeEditor</code> component running <code>Vec2</code>, <code>Stats</code>, and <code>Pool</code> live.
+      </p>
+      <div id="about-editor-mount"></div>
     </section>
   </main>
+
+  <script type="module">
+    import { CodeEditor } from '/demo/code-editor.js';
+
+    new CodeEditor(document.getElementById('about-editor-mount'), {
+      title: 'Quick GameKit Sandbox',
+      tag: 'Interactive',
+      code: `const player = new Stats({ maxHealth: 100, speed: 200, damage: 25 });
+player.addModifier('haste', 'speed', 'percent', 0.5);
+
+const pos = new Vec2(10, 20).add(new Vec2(5, -5));
+console.log('Player Pos:', pos.x, pos.y);
+console.log('Boosted Speed:', player.get('speed'));`
+    });
+  </script>
 </body>
 </html>

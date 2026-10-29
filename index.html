@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="/demo/module-docs.css">
   <style>
     .showcase-card {
-      background: linear-gradient(135deg, #1a242d 0%, #181b22 60%, #261824 100%);
-      border: 1px solid var(--accent);
+      background: var(--panel);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.75rem 2rem;
       margin-bottom: 2.5rem;
@@ -21,48 +21,50 @@
     .showcase-info { max-width: 680px; }
     .badge {
       display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 700;
+      font-size: 0.74rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--accent);
-      background: var(--accent-dim);
-      padding: 0.25rem 0.6rem;
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.55rem;
       border-radius: 4px;
       margin-bottom: 0.65rem;
     }
-    .showcase-info h1 { font-size: 1.7rem; margin: 0 0 0.5rem; }
+    .showcase-info h1 { font-size: 1.65rem; color: var(--accent); margin: 0 0 0.5rem; }
     .showcase-info p { color: var(--muted); margin: 0 0 1rem; font-size: 0.92rem; }
     .module-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .module-pills code {
       font-size: 0.75rem;
-      background: rgba(255, 255, 255, 0.06);
+      background: #080b12;
       color: var(--text);
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-subtle);
     }
     .btn-launch {
       background: var(--accent);
-      color: #0b0e14;
+      color: #080b12;
       font-weight: 700;
       text-decoration: none;
-      padding: 0.85rem 1.5rem;
+      padding: 0.8rem 1.45rem;
       border-radius: 6px;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       white-space: nowrap;
     }
+    .btn-launch:hover { opacity: 0.9; }
     .tier-section { margin-bottom: 2.5rem; }
     .tier-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
       padding-bottom: 0.5rem;
       margin-bottom: 1rem;
     }
-    .tier-header h2 { font-size: 1.25rem; margin: 0; }
-    .tier-header span { font-family: monospace; color: var(--muted); font-size: 0.85rem; }
+    .tier-header h2 { font-size: 1.2rem; color: var(--accent); margin: 0; }
+    .tier-header span { font-family: monospace; color: var(--muted); font-size: 0.82rem; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -70,7 +72,7 @@
     }
     .card {
       background: var(--panel);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-subtle);
       border-radius: 8px;
       padding: 1.25rem;
       display: flex;
@@ -85,15 +87,15 @@
       align-items: center;
       margin-bottom: 0.4rem;
     }
-    .card-title { font-weight: 700; font-size: 1.08rem; color: var(--accent); }
+    .card-title { font-weight: 700; font-size: 1.05rem; color: var(--accent); }
     .card-path { font-family: monospace; font-size: 0.78rem; color: var(--muted); }
-    .card p { font-size: 0.88rem; color: var(--muted); margin: 0 0 0.85rem; }
+    .card p { font-size: 0.87rem; color: var(--muted); margin: 0 0 0.85rem; }
     .card-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-subtle);
       padding-top: 0.75rem;
     }
     .btn-inspect {
@@ -113,11 +115,9 @@
       font-weight: 600;
     }
     .link-page:hover { text-decoration: underline; }
-
-    /* Main-Page Interactive Module Inspector */
     .inspector-section {
-      background: #13161d;
-      border: 1px solid var(--accent);
+      background: var(--panel);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.75rem;
       margin-bottom: 3rem;
@@ -129,22 +129,22 @@
       gap: 0.4rem;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
     }
     .tab-btn {
-      background: var(--panel);
+      background: #080b12;
       color: var(--muted);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-subtle);
       padding: 0.4rem 0.8rem;
       border-radius: 5px;
       font-family: monospace;
       font-size: 0.82rem;
       cursor: pointer;
     }
-    .tab-btn:hover { color: var(--text); border-color: var(--muted); }
+    .tab-btn:hover { color: var(--text); border-color: var(--border); }
     .tab-btn.active {
       background: var(--accent);
-      color: #0b0e14;
+      color: #080b12;
       border-color: var(--accent);
       font-weight: 700;
     }
@@ -156,8 +156,8 @@
       gap: 1rem;
       margin-bottom: 1.25rem;
     }
-    .inspector-head h2 { font-size: 1.5rem; margin: 0 0 0.3rem; color: var(--accent); }
-    .inspector-head p { color: var(--muted); margin: 0; max-width: 720px; font-size: 0.92rem; }
+    .inspector-head h2 { font-size: 1.45rem; margin: 0 0 0.3rem; color: var(--accent); }
+    .inspector-head p { color: var(--muted); margin: 0; max-width: 720px; font-size: 0.9rem; }
   </style>
 </head>
 <body class="gk-doc-page">
@@ -165,10 +165,10 @@
     <div class="gk-topbar-inner">
       <a href="/" class="gk-brand">GameKit <span>v0.2.0</span></a>
       <nav class="gk-pill-nav">
-        <a href="/" class="active">Modules &amp; Examples</a>
-        <a href="#live-inspector">Interactive Usage Inspector</a>
+        <a href="/" class="active">Modules</a>
+        <a href="#live-inspector">Live Code Workbench</a>
         <a href="/demo/showcase/swarm-demo.html">12-Module Swarm Game</a>
-        <a href="/about.html">Architecture</a>
+        <a href="/about.html">About Me</a>
       </nav>
     </div>
   </header>
@@ -176,11 +176,11 @@
   <main class="gk-container">
     <section class="showcase-card">
       <div class="showcase-info">
-        <span class="badge">Full 12-Module Integration Game</span>
-        <h1>Swarm Survival — Replayable Arena Showcase</h1>
+        <span class="badge">12-Module Integration Showcase</span>
+        <h1>Swarm Survival — Replayable Arena Demo</h1>
         <p>
-          Test all 12 Core and Gameplay modules working together in a seeded arena survival game with spatial-hashed flock separation,
-          pooled projectiles and floating damage numbers, ground item buffs, pause character inspector, and live map regeneration.
+          Full arena survival game built strictly with the 12 Core and Gameplay modules. Features spatial-hashed swarm separation,
+          object-pooled projectiles and floating combat text, temporary ground buffs, pause character inspector, and live map regeneration.
         </p>
         <div class="module-pills">
           <code>Vec2</code><code>EventEmitter</code><code>GameLoop</code><code>InputManager</code>
@@ -194,7 +194,7 @@
     <section class="tier-section">
       <div class="tier-header">
         <h2>Tier 1: Core Foundations</h2>
-        <span>core/ &mdash; Click any module for 3 examples &amp; live sandbox</span>
+        <span>core/</span>
       </div>
       <div class="grid" id="core-grid"></div>
     </section>
@@ -202,16 +202,15 @@
     <section class="tier-section">
       <div class="tier-header">
         <h2>Tier 2: Gameplay Systems</h2>
-        <span>gameplay/ &mdash; Click any module for 3 examples &amp; live sandbox</span>
+        <span>gameplay/</span>
       </div>
       <div class="grid" id="gameplay-grid"></div>
     </section>
 
-    <!-- Interactive Usage, API & 3-Example Runner directly on Main Page -->
     <section class="inspector-section" id="live-inspector">
       <div class="tier-header" style="margin-bottom:1rem;">
-        <h2>Interactive Module Usage, API &amp; 3-Example Testbench</h2>
-        <span>Select any module below to inspect its API and run all 3 code examples live</span>
+        <h2>Live Editable Code Workbench (3 Sandboxes per Module)</h2>
+        <span>Edit any snippet below and click Run Code (or press Ctrl+Enter)</span>
       </div>
       <div class="inspector-tabs" id="inspector-tabs"></div>
       <div id="inspector-body"></div>
@@ -219,7 +218,7 @@
   </main>
 
   <script type="module">
-    import { MODULE_DOCS, renderExamplesHTML, bindExampleRunners } from '/demo/module-docs.js';
+    import { MODULE_DOCS, mountModuleEditors } from '/demo/module-docs.js';
 
     const coreGrid = document.getElementById('core-grid');
     const gameplayGrid = document.getElementById('gameplay-grid');
@@ -237,8 +236,8 @@
           <pre class="gk-code-block" style="margin-bottom:0.75rem; padding:0.5rem 0.65rem; font-size:0.75rem;"><code>${mod.importCode}</code></pre>
         </div>
         <div class="card-actions">
-          <button class="btn-inspect" data-select="${mod.id}">3 Examples &amp; API ↓</button>
-          <a href="${mod.demoUrl}" class="link-page">Open Sandbox Page →</a>
+          <button class="btn-inspect" data-select="${mod.id}">Edit &amp; Run 3 Examples ↓</button>
+          <a href="${mod.demoUrl}" class="link-page">Open Demo Page →</a>
         </div>
       </div>
     `;
@@ -266,8 +265,8 @@
             <h2>${mod.name} <small style="font-size:0.85rem; color:var(--muted); font-family:monospace;">(${mod.file})</small></h2>
             <p>${mod.summary}</p>
           </div>
-          <a href="${mod.demoUrl}" class="btn-launch" style="padding:0.6rem 1.1rem; font-size:0.85rem;">
-            Launch Dedicated ${mod.name} Sandbox Page →
+          <a href="${mod.demoUrl}" class="btn-launch" style="padding:0.55rem 1.05rem; font-size:0.84rem;">
+            Open Dedicated ${mod.name} Demo →
           </a>
         </div>
 
@@ -289,14 +288,13 @@
           </table>
         </div>
 
-        <h3 style="color:var(--accent); margin:0 0 0.85rem; font-size:1.1rem;">
-          3 Concrete Usage Examples for <code>${mod.name}</code> (Click "▶ Run Test" to execute)
+        <h3 style="color:var(--accent); margin:0 0 0.85rem; font-size:1.05rem;">
+          3 Editable Code Examples for <code>${mod.name}</code>
         </h3>
-        ${renderExamplesHTML(mod)}
+        <div id="workbench-editors"></div>
       `;
 
-      bindExampleRunners(bodyEl);
-      bodyEl.querySelectorAll('.gk-btn-run').forEach((btn) => btn.click());
+      mountModuleEditors(document.getElementById('workbench-editors'), mod);
 
       if (scroll) {
         document.getElementById('live-inspector').scrollIntoView({ behavior: 'smooth' });
