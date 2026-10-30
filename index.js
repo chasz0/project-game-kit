@@ -4,6 +4,7 @@ export { GameLoop } from './core/loop.js';
 export { InputManager, input } from './core/input.js';
 export { TimerManager, timer } from './core/timer.js';
 export { Random, random } from './core/random.js';
+export { StorageManager, storage } from './core/storage.js';
 
 export { Pool } from './gameplay/pool.js';
 export { SpatialHash } from './gameplay/spatialHash.js';
@@ -20,3 +21,6 @@ export { Inventory } from './gameplay/inventory.js';
 export { steering } from './ai/steering.js';
 export { FlowField } from './ai/flowField.js';
 export { lineOfSight } from './ai/lineOfSight.js';
+
+export { Tilemap } from './world/tilemap.js';
+export { procgen } from './world/procgen.js';

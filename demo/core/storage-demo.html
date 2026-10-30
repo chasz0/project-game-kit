@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Storage Manager Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .mode-tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .mode-tabs button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .cfg-panel {
+      background: #090d15;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.85rem;
+      margin-bottom: 0.85rem;
+      font-size: 0.82rem;
+    }
+    .cfg-panel.hidden { display: none; }
+    .cfg-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .cfg-row label {
+      width: 110px;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .cfg-row input {
+      flex: 1;
+      min-width: 180px;
+    }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Multi-Backend Storage Demo (Local / Root File / Supabase)</h3>
+
+  <div class="mode-tabs" id="modeTabs">
+    <button data-mode="local" class="active">1. LocalStorage Mode</button>
+    <button data-mode="file">2. Root File Mode (gamekit-save.json)</button>
+    <button data-mode="supabase">3. Supabase DB Mode</button>
+  </div>
+
+  <div id="panelLocal" class="cfg-panel">
+    <div class="cfg-row">
+      <label>Namespace:</label>
+      <input type="text" id="inpNamespace" value="gamekit_demo">
+      <button id="btnConnectLocal">Use LocalStorage</button>
+    </div>
+  </div>
+
+  <div id="panelFile" class="cfg-panel hidden">
+    <div class="cfg-row">
+      <label>Root File:</label>
+      <input type="text" id="inpFilename" value="gamekit-save.json">
+      <button id="btnConnectFile">Use Root File</button>
+      <button id="btnDownloadJson">Download .json</button>
+    </div>
+    <small style="color:var(--muted);">Writes directly to <code>./gamekit-save.json</code> in your project root folder.</small>
+  </div>
+
+  <div id="panelSupabase" class="cfg-panel hidden">
+    <div class="cfg-row">
+      <label>Project URL:</label>
+      <input type="text" id="inpSbUrl" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="cfg-row">
+      <label>Anon Key:</label>
+      <input type="text" id="inpSbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+    </div>
+    <div class="cfg-row">
+      <label>Profile ID:</label>
+      <input type="text" id="inpSbProfile" value="player_one">
+      <button id="btnConnectSupabase">Connect Supabase</button>
+    </div>
+    <details style="margin-top:0.4rem; color:var(--muted);">
+      <summary style="cursor:pointer; color:var(--accent);">Supabase Table SQL (Run once in Supabase SQL Editor)</summary>
+      <pre style="margin-top:0.4rem; font-size:0.75rem;">create table if not exists public.gamekit_saves (
+  profile_id text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.gamekit_saves enable row level security;
+create policy "Allow public save access" on public.gamekit_saves
+  for all using (true) with check (true);</pre>
+    </details>
+  </div>
+
+  <div>
+    <button id="btnAddGold">+50 Gold</button>
+    <button id="btnLevelUp">Level Up (+1)</button>
+    <button id="btnNewHigh">Beat High Score</button>
+    <button id="btnReload">Reload from Active Backend</button>
+    <button id="btnClearSave">Reset Save</button>
+  </div>
+
+  <pre id="output"></pre>
+  <script type="module" src="./js/storage-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

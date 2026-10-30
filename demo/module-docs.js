@@ -1175,6 +1175,164 @@ console.log('Player HP:', player.health, '| Medkits left:', inv.count('medkit'))
       }
     ]
   },
+  {
+    id: 'tilemap',
+    name: 'Tilemap',
+    tier: 'Tier 4: World',
+    file: 'world/tilemap.js',
+    demoUrl: '/demo/world/tilemap-demo.html',
+    importCode: "import { Tilemap } from '@world/tilemap.js';",
+    summary: 'Uint8Array-backed 2D tile grid with O(1) circle-vs-tile collision resolution, camera viewport culling, and greedy wall-rectangle extraction.',
+    api: [
+      { sig: 'new Tilemap({ cols, rows, tileSize, originX, originY, solidIds })', desc: 'Creates a 2D tile grid.' },
+      { sig: 'map.get(col, row) / map.set(col, row, id)', desc: 'Reads or writes a tile ID at (col, row).' },
+      { sig: 'map.isSolid(col, row) / isSolidAtWorld(wx, wy)', desc: 'Checks if a tile or world coordinate is solid (out-of-bounds is solid).' },
+      { sig: 'map.collideCircle(circle, out)', desc: 'Resolves circle {x, y, r} against nearby solid tiles in O(1) time.' },
+      { sig: 'map.forEachVisible(viewX, viewY, viewW, viewH, fn)', desc: 'Iterates only over tiles visible inside the camera viewport.' },
+      { sig: 'map.extractWallRects(out = [])', desc: 'Merges contiguous solid tiles into minimal {x, y, w, h} bounding boxes.' }
+    ],
+    examples: [
+      {
+        title: 'O(1) Circle-vs-Tilemap Sliding Collision',
+        tag: 'Example 1',
+        desc: 'Pushes a player circle out of a solid tile at (2, 2) without checking the rest of the map.',
+        code: `const map = new Tilemap({ cols: 10, rows: 10, tileSize: 32 });
+map.set(2, 2, 1); // Solid tile at x:[64..96], y:[64..96]
+
+const player = { x: 58, y: 80, r: 12 };
+const res = map.collideCircle(player);
+
+console.log('Hit wall:', res.hit, '| Ejected player.x:', player.x);`
+      },
+      {
+        title: 'Greedy Wall Rectangle Compression (extractWallRects)',
+        tag: 'Example 2',
+        desc: 'Merges a 10-tile horizontal wall into a single { x, y, w, h } box for fast raycasting.',
+        code: `const map = new Tilemap({ cols: 12, rows: 12, tileSize: 32 });
+for (let c = 1; c <= 10; c++) map.set(c, 4, 1);
+
+const boxes = map.extractWallRects();
+console.log('10 solid tiles merged into', boxes.length, 'box:', boxes[0]);`
+      },
+      {
+        title: 'Camera Viewport Culling on a Large Grid',
+        tag: 'Example 3',
+        desc: 'Queries a 320x240 camera window on a 100x100 tilemap (10,000 tiles) and visits only the visible tiles.',
+        code: `const map = new Tilemap({ cols: 100, rows: 100, tileSize: 32 });
+const visited = map.forEachVisible(160, 160, 320, 240, () => {});
+
+console.log('Total tiles: 10000 | Visited in camera view:', visited);`
+      }
+    ]
+  },
+  {
+    id: 'procgen',
+    name: 'procgen',
+    tier: 'Tier 4: World',
+    file: 'world/procgen.js',
+    demoUrl: '/demo/world/procgen-demo.html',
+    importCode: "import { procgen } from '@world/procgen.js';",
+    summary: 'Seeded procedural map generators including Cellular Automata caves (with flood-fill connectivity), Room-and-Corridor dungeons, and Tactical Pillar arenas.',
+    api: [
+      { sig: 'procgen.cellularAutomata({ cols, rows, fillChance, steps, ensureConnected, rng })', desc: 'Generates an organic cave and removes isolated pockets.' },
+      { sig: 'procgen.dungeonRooms({ cols, rows, roomCount, minSize, maxSize, corridorWidth, rng })', desc: 'Carves rectangular rooms connected by L-corridors.' },
+      { sig: 'procgen.arenaPillars({ cols, rows, pillarCount, corridorGap, clearCenterRadius, rng })', desc: 'Generates an arena with spaced pillars and an open center.' },
+      { sig: 'procgen.findOpenTile(grid, cols, rows)', desc: 'Finds the walkable tile (0) closest to the center of the grid.' }
+    ],
+    examples: [
+      {
+        title: 'Connected Cellular Automata Cave',
+        tag: 'Example 1',
+        desc: 'Generates a seeded 30x30 cave where all unreachable pockets are automatically sealed.',
+        code: `const rng = new Random('cave-seed-42');
+const cave = procgen.cellularAutomata({
+  cols: 30, rows: 30, fillChance: 0.44, steps: 4, rng: () => rng.next()
+});
+
+console.log('Grid size:', cave.grid.length, '| Safe spawn tile:', cave.spawn);`
+      },
+      {
+        title: 'Dungeon Rooms & L-Corridors',
+        tag: 'Example 2',
+        desc: 'Carves connected rooms and outputs the room list and starting spawn point.',
+        code: `const rng = new Random('dungeon-99');
+const dungeon = procgen.dungeonRooms({
+  cols: 40, rows: 40, roomCount: 8, rng: () => rng.next()
+});
+
+console.log('Rooms carved:', dungeon.rooms.length, '| First room center:', dungeon.spawn);`
+      },
+      {
+        title: 'Procgen -> Tilemap -> FlowField Pipeline',
+        tag: 'Example 3',
+        desc: 'Feeds a generated arena directly into Tilemap to extract wall boxes for raycasting.',
+        code: `const arena = procgen.arenaPillars({ cols: 25, rows: 25, pillarCount: 8 });
+const map = new Tilemap({ cols: 25, rows: 25, tileSize: 32 }).loadGrid(arena.grid);
+const wallRects = map.extractWallRects();
+
+console.log('Pillars placed:', arena.pillars.length, '| Merged wall rects:', wallRects.length);`
+      }
+    ]
+  },
+  {
+    id: 'storage',
+    name: 'StorageManager',
+    tier: 'Tier 1: Core',
+    file: 'core/storage.js',
+    demoUrl: '/demo/core/storage-demo.html',
+    importCode: "import { StorageManager, storage } from '@core/storage.js';",
+    summary: 'Unified save-data manager with three interchangeable backends: Browser LocalStorage, Project Root JSON File (gamekit-save.json), and Supabase DB.',
+    api: [
+      { sig: 'await storage.useLocal({ namespace })', desc: 'Uses browser localStorage under the given namespace.' },
+      { sig: 'await storage.useFile({ filename })', desc: 'Reads and writes a JSON save file directly in your project root.' },
+      { sig: 'await storage.useSupabase({ url, anonKey, table, profileId, client })', desc: 'Connects once to Supabase (via REST or supabase-js client) and syncs save data.' },
+      { sig: 'storage.set(key, value) / storage.setMany(obj)', desc: 'Updates cache immediately and flushes to the active backend.' },
+      { sig: 'storage.get(key, fallback)', desc: 'Reads synchronously from the in-memory cache (0ms lag in game loops).' },
+      { sig: 'await storage.load() / await storage.flush()', desc: 'Explicitly pulls or pushes the save payload to the active backend.' }
+    ],
+    examples: [
+      {
+        title: 'LocalStorage Save & Synchronous Game-Loop Read',
+        tag: 'Example 1',
+        desc: 'Saves player progress and reads it back synchronously with fallback defaults.',
+        code: `const save = new StorageManager({ namespace: 'test_slot' });
+await save.useLocal();
+
+save.setMany({ highScore: 8450, unlockedLevel: 4, relics: ['magnet', 'pierce'] });
+console.log('High Score:', save.get('highScore', 0));
+console.log('Full Payload:', save.getAll());`
+      },
+      {
+        title: 'Root File Storage (Saves ./gamekit-save.json in Project Root)',
+        tag: 'Example 2',
+        desc: 'Run this snippet and check your project root directory for gamekit-save.json!',
+        code: `const fileSave = new StorageManager();
+await fileSave.useFile({ filename: 'gamekit-save.json' });
+
+await fileSave.set('lastRunSeed', 'miku-39');
+await fileSave.set('totalKills', 312);
+console.log('Saved to ./gamekit-save.json:', fileSave.getAll());`
+      },
+      {
+        title: 'Portable Supabase Connection (Mock Client or URL/Key)',
+        tag: 'Example 3',
+        desc: 'Connects once with a Supabase client (or URL + anonKey), then uses standard set/get calls.',
+        code: `const cloudRows = new Map();
+const mockSupabaseClient = {
+  from: () => ({
+    select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: cloudRows.get('p1'), error: null }) }) }),
+    upsert: async (row) => { cloudRows.set(row.profile_id, row); return { error: null }; }
+  })
+};
+
+const cloudSave = new StorageManager();
+await cloudSave.useSupabase({ client: mockSupabaseClient, profileId: 'p1' });
+await cloudSave.set('metaGold', 999);
+
+console.log('Synced row in Supabase:', cloudRows.get('p1'));`
+      }
+    ]
+  },
 ];
 
 export function mountModuleEditors(container, mod) {
