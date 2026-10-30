@@ -215,6 +215,22 @@
       <div class="grid" id="ai-grid"></div>
     </section>
 
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Tier 4: World &amp; Procedural Maps</h2>
+        <span>world/</span>
+      </div>
+      <div class="grid" id="world-grid"></div>
+    </section>
+
+    <section class="tier-section">
+      <div class="tier-header">
+        <h2>Tier 5: UI &amp; Visual Feedback</h2>
+        <span>ui/</span>
+      </div>
+      <div class="grid" id="ui-grid"></div>
+    </section>
+
     <section class="inspector-section" id="live-inspector">
       <div class="tier-header" style="margin-bottom:1rem;">
         <h2>Live Editable Code Workbench (3 Sandboxes per Module)</h2>
@@ -230,7 +246,9 @@
 
     const coreGrid = document.getElementById('core-grid');
     const gameplayGrid = document.getElementById('gameplay-grid');
+    const worldGrid = document.getElementById('world-grid');
     const aiGrid = document.getElementById('ai-grid');
+    const uiGrid = document.getElementById('ui-grid');
     const tabsEl = document.getElementById('inspector-tabs');
     const bodyEl = document.getElementById('inspector-body');
 
@@ -254,6 +272,8 @@
     coreGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 1')).map(renderCard).join('');
     gameplayGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 2')).map(renderCard).join('');
     aiGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 3')).map(renderCard).join('');
+    worldGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 4')).map(renderCard).join('');
+    uiGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 5')).map(renderCard).join('');
 
     tabsEl.innerHTML = MODULE_DOCS.map((m) => `
       <button class="tab-btn" data-tab="${m.id}">${m.name}</button>

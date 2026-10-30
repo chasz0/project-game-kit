@@ -1333,6 +1333,162 @@ console.log('Synced row in Supabase:', cloudRows.get('p1'));`
       }
     ]
   },
+  {
+    id: 'audio',
+    name: 'SoundManager',
+    tier: 'Tier 1: Core',
+    file: 'core/audio.js',
+    demoUrl: '/demo/core/audio-demo.html',
+    importCode: "import { SoundManager, audio } from '@core/audio.js';",
+    summary: 'Web Audio API procedural synthesizer and sound manager with per-sound cooldown throttling (throttleMs) and random pitch variance for swarm combat.',
+    api: [
+      { sig: 'audio.register(id, { wave, freq, endFreq, duration, volume, throttleMs, pitchVariance })', desc: 'Registers a procedural synth or noise preset.' },
+      { sig: 'audio.play(id, { volumeScale, pitchScale })', desc: 'Plays the preset if not muted or throttled; returns boolean.' },
+      { sig: 'audio.canPlay(id, now)', desc: 'Checks if throttleMs has elapsed since the last play of id.' },
+      { sig: 'audio.setVolume(level) / audio.toggleMute()', desc: 'Adjusts master volume (0..1) or toggles mute.' }
+    ],
+    examples: [
+      {
+        title: 'Swarm-Safe Sound Throttling (50 Hits on Same Frame)',
+        tag: 'Example 1',
+        desc: 'When 50 bullets hit on the same frame, throttleMs ensures only the first sound plays so speakers never clip.',
+        code: `const sfx = new SoundManager();
+let played = 0, throttled = 0;
+
+for (let i = 0; i < 50; i++) {
+  if (sfx.play('hit')) played++;
+  else throttled++;
+}
+
+console.log('Played:', played, '| Throttled:', throttled);`
+      },
+      {
+        title: 'Registering a Custom Laser Synth Preset',
+        tag: 'Example 2',
+        desc: 'Defines a custom frequency sweep preset with zero external audio files.',
+        code: `const sfx = new SoundManager();
+sfx.register('railgun', {
+  wave: 'sawtooth',
+  freq: 880,
+  endFreq: 110,
+  duration: 180,
+  throttleMs: 60
+});
+
+console.log('Registered railgun, canPlay:', sfx.canPlay('railgun'));
+sfx.play('railgun');`
+      },
+      {
+        title: 'Master Volume & Mute Guard',
+        tag: 'Example 3',
+        desc: 'Muting prevents playback before any Web Audio nodes are allocated.',
+        code: `const sfx = new SoundManager({ masterVolume: 0.8 });
+sfx.toggleMute();
+
+console.log('Muted:', sfx.muted, '| play("shoot"):', sfx.play('shoot'));`
+      }
+    ]
+  },
+  {
+    id: 'particles',
+    name: 'ParticleSystem',
+    tier: 'Tier 5: UI',
+    file: 'ui/particles.js',
+    demoUrl: '/demo/ui/particles-demo.html',
+    importCode: "import { ParticleSystem } from '@ui/particles.js';",
+    summary: 'Zero-allocation 2D particle emitter with internal free-list object recycling, directional cones, drag, gravity, and canvas glow.',
+    api: [
+      { sig: 'new ParticleSystem({ maxParticles, preallocate, rng })', desc: 'Creates a particle emitter with pre-allocated particles.' },
+      { sig: 'fx.emit(x, y, { count, color, speedMin, speedMax, angle, spread, drag, gravity, glow })', desc: 'Spawns a burst or cone of particles at (x, y).' },
+      { sig: 'fx.update(dt)', desc: 'Advances positions and recycles expired particles in O(1) via swap-and-pop.' },
+      { sig: 'fx.render(ctx)', desc: 'Renders all active particles onto the Canvas2D context.' },
+      { sig: 'fx.activeCount / fx.pooledCount', desc: 'Live counts of active vs idle recycled particles.' }
+    ],
+    examples: [
+      {
+        title: 'Burst Emission & O(1) Swap-and-Pop Recycling',
+        tag: 'Example 1',
+        desc: 'Emits 20 particles, advances past their lifetime, and verifies they return to the internal freeList.',
+        code: `const fx = new ParticleSystem({ preallocate: 30 });
+fx.emit(100, 100, { count: 20, lifeMin: 200, lifeMax: 200 });
+console.log('During burst -> active:', fx.activeCount, 'idle:', fx.pooledCount);
+
+fx.update(250);
+console.log('After expiry -> active:', fx.activeCount, 'idle:', fx.pooledCount);`
+      },
+      {
+        title: 'Directional Thruster Cone Emission',
+        tag: 'Example 2',
+        desc: 'Emits particles in a narrow 30-degree cone pointing right (angle = 0).',
+        code: `const fx = new ParticleSystem({ preallocate: 10 });
+fx.emit(0, 0, { count: 5, angle: 0, spread: Math.PI / 6, speedMin: 100, speedMax: 100 });
+fx.update(100);
+
+console.log('First particle pos after 100ms:', fx.active[0].x.toFixed(1), fx.active[0].y.toFixed(1));`
+      },
+      {
+        title: 'Hard Cap Protection (maxParticles)',
+        tag: 'Example 3',
+        desc: 'Prevents runaway frame drops by clamping active particles at maxParticles.',
+        code: `const fx = new ParticleSystem({ maxParticles: 15, preallocate: 5 });
+const spawned = fx.emit(50, 50, { count: 100 });
+
+console.log('Requested 100, capped at:', spawned, '| activeCount:', fx.activeCount);`
+      }
+    ]
+  },
+  {
+    id: 'floatingText',
+    name: 'FloatingTextSystem',
+    tier: 'Tier 5: UI',
+    file: 'ui/floatingText.js',
+    demoUrl: '/demo/ui/floatingText-demo.html',
+    importCode: "import { FloatingTextSystem } from '@ui/floatingText.js';",
+    summary: 'Pooled world-space floating damage numbers and status popups with horizontal jitter and high-contrast outlines.',
+    api: [
+      { sig: 'new FloatingTextSystem({ maxItems, preallocate, rng })', desc: 'Creates a pooled floating text manager.' },
+      { sig: 'combatText.spawn(x, y, text, { color, vy, duration, fontSize, jitterX })', desc: 'Spawns a rising text popup at world coordinates (x, y).' },
+      { sig: 'combatText.update(dt)', desc: 'Moves active popups and recycles expired ones in O(1).' },
+      { sig: 'combatText.render(ctx)', desc: 'Draws outlined text popups onto the Canvas2D context.' },
+      { sig: 'combatText.activeCount / combatText.pooledCount', desc: 'Live counts of active vs idle recycled text objects.' }
+    ],
+    examples: [
+      {
+        title: 'Spawning & Recycling Damage Numbers',
+        tag: 'Example 1',
+        desc: 'Spawns a damage popup, steps 300ms to check upward motion, then expires it back to the pool.',
+        code: `const fts = new FloatingTextSystem({ preallocate: 10 });
+const item = fts.spawn(200, 150, '-45', { vy: -50, duration: 500, jitterX: 0 });
+
+fts.update(300);
+console.log('At 300ms y:', item.y, '| active:', fts.activeCount);
+
+fts.update(250);
+console.log('At 550ms active:', fts.activeCount, '| recycled:', fts.pooledCount);`
+      },
+      {
+        title: 'Horizontal Jitter for Stacked Hits',
+        tag: 'Example 2',
+        desc: 'Offsets simultaneous hits on the same enemy so damage numbers remain readable.',
+        code: `const fts = new FloatingTextSystem();
+const a = fts.spawn(100, 100, '-18', { jitterX: 12 });
+const b = fts.spawn(100, 100, '-18', { jitterX: 12 });
+
+console.log('Popup A x:', a.x.toFixed(1), '| Popup B x:', b.x.toFixed(1));`
+      },
+      {
+        title: 'Oldest-Item Eviction When At Capacity',
+        tag: 'Example 3',
+        desc: 'When maxItems is reached, the oldest popup is recycled immediately so new crits always appear.',
+        code: `const fts = new FloatingTextSystem({ maxItems: 2, preallocate: 2 });
+fts.spawn(0, 0, 'Hit 1');
+fts.spawn(0, 0, 'Hit 2');
+fts.spawn(0, 0, 'Hit 3 (Latest)');
+
+console.log('Active texts:', fts.active.map((t) => t.text).join(', '));`
+      }
+    ]
+  }
 ];
 
 export function mountModuleEditors(container, mod) {

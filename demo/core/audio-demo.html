@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Audio Synthesizer Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Web Audio Synthesizer &amp; Swarm Throttle Demo</h3>
+
+  <div>
+    <button id="btnShoot">Play Shoot</button>
+    <button id="btnHit">Play Hit (Noise)</button>
+    <button id="btnExplosion">Play Explosion</button>
+    <button id="btnPickup">Play Pickup</button>
+    <button id="btnDash">Play Dash</button>
+    <button id="btnLevelup">Play Level-Up</button>
+  </div>
+
+  <div style="margin-top:0.5rem;">
+    <button id="btnSwarmBurst">Simulate 50 Simultaneous Hits (Throttled)</button>
+    <button id="btnMute">Mute: OFF</button>
+  </div>
+
+  <pre id="output"></pre>
+  <script type="module" src="./js/audio-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

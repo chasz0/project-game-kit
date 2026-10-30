@@ -5,6 +5,7 @@ export { InputManager, input } from './core/input.js';
 export { TimerManager, timer } from './core/timer.js';
 export { Random, random } from './core/random.js';
 export { StorageManager, storage } from './core/storage.js';
+export { SoundManager, audio } from './core/audio.js';
 
 export { Pool } from './gameplay/pool.js';
 export { SpatialHash } from './gameplay/spatialHash.js';
@@ -24,3 +25,6 @@ export { lineOfSight } from './ai/lineOfSight.js';
 
 export { Tilemap } from './world/tilemap.js';
 export { procgen } from './world/procgen.js';
+
+export { ParticleSystem } from './ui/particles.js';
+export { FloatingTextSystem } from './ui/floatingText.js';
