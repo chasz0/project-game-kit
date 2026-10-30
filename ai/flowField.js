@@ -1,7 +1,7 @@
 // Grid-based Flow Field (Dijkstra / BFS vector field) for O(1) swarm pathfinding.
 //
 //   const field = new FlowField({ cols: 40, rows: 40, cellSize: 40, originX: -800, originY: -800 });
-//   field.setObstacleRect(wall.x, wall.y, wall.w, wall.h, enemyRadius);
+//   field.setObstacleRect(wall.x, wall.y, wall.w, wall.h, 8);
 //   field.compute(player.x, player.y);
 //   const dir = field.sample(enemy.x, enemy.y, scratchVec);
 
@@ -62,7 +62,6 @@ export class FlowField {
     return this.walls[row * this.cols + col] === 1;
   }
 
-  // Marks all grid cells overlapping a world-space box (inflated by agent radius) as walls.
   setObstacleRect(x, y, w, h, inflate = 0) {
     const minC = Math.max(0, Math.floor((x - inflate - this.originX) * this.invCellSize));
     const minR = Math.max(0, Math.floor((y - inflate - this.originY) * this.invCellSize));
@@ -77,7 +76,36 @@ export class FlowField {
     }
   }
 
-  // Computes integration costs and normalized flow vectors toward (targetX, targetY).
+  // If the target is hugging an inflated wall cell, snaps to the closest open cell.
+  _findNearestOpenCell(startCol, startRow) {
+    if (this.walls[startRow * this.cols + startCol] === 0) {
+      return { col: startCol, row: startRow };
+    }
+    for (let radius = 1; radius <= 5; radius++) {
+      let bestCol = -1;
+      let bestRow = -1;
+      let bestDistSq = Infinity;
+
+      for (let dr = -radius; dr <= radius; dr++) {
+        for (let dc = -radius; dc <= radius; dc++) {
+          const c = startCol + dc;
+          const r = startRow + dr;
+          if (!this.inBounds(c, r)) continue;
+          if (this.walls[r * this.cols + c] === 0) {
+            const dSq = dc * dc + dr * dr;
+            if (dSq < bestDistSq) {
+              bestDistSq = dSq;
+              bestCol = c;
+              bestRow = r;
+            }
+          }
+        }
+      }
+      if (bestCol !== -1) return { col: bestCol, row: bestRow };
+    }
+    return { col: startCol, row: startRow };
+  }
+
   compute(targetX, targetY) {
     const cols = this.cols;
     const rows = this.rows;
@@ -91,12 +119,13 @@ export class FlowField {
     dirX.fill(0);
     dirY.fill(0);
 
-    let tCol = Math.floor((targetX - this.originX) * this.invCellSize);
-    let tRow = Math.floor((targetY - this.originY) * this.invCellSize);
-    tCol = Math.max(0, Math.min(cols - 1, tCol));
-    tRow = Math.max(0, Math.min(rows - 1, tRow));
+    let rawCol = Math.floor((targetX - this.originX) * this.invCellSize);
+    let rawRow = Math.floor((targetY - this.originY) * this.invCellSize);
+    rawCol = Math.max(0, Math.min(cols - 1, rawCol));
+    rawRow = Math.max(0, Math.min(rows - 1, rawRow));
 
-    const startIdx = tRow * cols + tCol;
+    const seed = this._findNearestOpenCell(rawCol, rawRow);
+    const startIdx = seed.row * cols + seed.col;
     cost[startIdx] = 0;
 
     let head = 0;
@@ -122,7 +151,6 @@ export class FlowField {
       }
     }
 
-    // Build normalized flow vectors pointing to the lowest-cost neighbor
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const idx = r * cols + c;
@@ -162,7 +190,6 @@ export class FlowField {
     }
   }
 
-  // Returns the normalized direction vector at world coordinates (worldX, worldY).
   sample(worldX, worldY, out = { x: 0, y: 0 }) {
     const col = Math.floor((worldX - this.originX) * this.invCellSize);
     const row = Math.floor((worldY - this.originY) * this.invCellSize);
@@ -177,18 +204,21 @@ export class FlowField {
     let vx = this.dirX[idx];
     let vy = this.dirY[idx];
 
-    // Fallback if an agent was pushed slightly inside a wall cell: sample nearest open neighbor
-    if (vx === 0 && vy === 0 && this.walls[idx] === 1) {
+    // If agent is on the target cell or nudged into a wall edge, steer toward the best nearby open cell
+    if (vx === 0 && vy === 0) {
       let bestCost = 2147483647;
-      for (let i = 0; i < 8; i++) {
-        const nc = col + DIRS_8[i][0];
-        const nr = row + DIRS_8[i][1];
-        if (!this.inBounds(nc, nr)) continue;
-        const nIdx = nr * this.cols + nc;
-        if (this.walls[nIdx] === 0 && this.cost[nIdx] !== -1 && this.cost[nIdx] < bestCost) {
-          bestCost = this.cost[nIdx];
-          vx = DIRS_8[i][0];
-          vy = DIRS_8[i][1];
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          if (dc === 0 && dr === 0) continue;
+          const nc = col + dc;
+          const nr = row + dr;
+          if (!this.inBounds(nc, nr)) continue;
+          const nIdx = nr * this.cols + nc;
+          if (this.walls[nIdx] === 0 && this.cost[nIdx] !== -1 && this.cost[nIdx] < bestCost) {
+            bestCost = this.cost[nIdx];
+            vx = dc;
+            vy = dr;
+          }
         }
       }
       const len = Math.sqrt(vx * vx + vy * vy);

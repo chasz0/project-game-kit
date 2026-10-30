@@ -257,10 +257,10 @@ body.gk-doc-page {
   margin: 0;
 }
 
-/* Reusable CodeEditor Component Styles */
+/* Reusable CodeEditor Component Styles — 1 per row */
 .gk-examples-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.25rem;
 }
 
