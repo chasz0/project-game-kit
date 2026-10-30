@@ -2,14 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Line of Sight &amp; Raycast Demo</title>
+  <title>Line of Sight &amp; Player Vision Demo</title>
   <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .ctrl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+      gap: 0.65rem;
+      margin: 0.75rem 0;
+      background: #090d15;
+      border: 1px solid var(--border-subtle);
+      padding: 0.85rem;
+      border-radius: 6px;
+    }
+    .ctrl-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .ctrl-item strong { color: var(--accent); }
+    .ctrl-item input[type="range"] { width: 100%; accent-color: var(--accent); }
+  </style>
 </head>
 <body>
   <a href="/">← Back to Hub</a>
-  <h3>Line of Sight, Vision Cone &amp; Raycast Demo</h3>
-  <p>Move mouse to move the player target. The turret rotates and checks vision cone + raycast occlusion.</p>
-  <canvas id="canvas" width="540" height="340"></canvas>
+  <h3>Player Line-of-Sight, Vision Polygon &amp; Sentry Demo</h3>
+
+  <div class="ctrl-grid">
+    <label class="ctrl-item">
+      <span>Player FOV: <strong id="valFov">90</strong>&deg;</span>
+      <input type="range" id="rngFov" min="30" max="360" value="90">
+    </label>
+    <label class="ctrl-item">
+      <span>Sight Range: <strong id="valRange">240</strong>px</span>
+      <input type="range" id="rngRange" min="100" max="420" value="240">
+    </label>
+    <label class="ctrl-item">
+      <span>Polygon Rays: <strong id="valRays">72</strong></span>
+      <input type="range" id="rngRays" min="16" max="180" value="72">
+    </label>
+    <label class="ctrl-item" style="justify-content:center;">
+      <span><input type="checkbox" id="chkRays"> Show Ray Lines</span>
+      <span><input type="checkbox" id="chkSentry" checked> Enable AI Sentry</span>
+    </label>
+  </div>
+
+  <div>
+    <button id="btn360">Toggle 360&deg; All-Around Sight</button>
+    <button id="btnRandomWalls">Randomize Walls</button>
+  </div>
+
+  <canvas id="canvas" width="540" height="350" style="margin-top:0.5rem;"></canvas>
   <pre id="output"></pre>
   <script type="module" src="./js/lineOfSight-demo.js"></script>
   <script type="module" src="/demo/module-docs.js"></script>

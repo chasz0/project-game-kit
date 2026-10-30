@@ -4,17 +4,76 @@
   <meta charset="UTF-8">
   <title>Steering Demo</title>
   <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .ctrl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+      gap: 0.65rem;
+      margin: 0.75rem 0;
+      background: #090d15;
+      border: 1px solid var(--border-subtle);
+      padding: 0.85rem;
+      border-radius: 6px;
+    }
+    .ctrl-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .ctrl-item strong { color: var(--accent); }
+    .ctrl-item input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .mode-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .mode-bar button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
   <a href="/">← Back to Hub</a>
-  <h3>Steering Behaviors Demo</h3>
-  <div>
-    <button id="modeSeek">Seek</button>
-    <button id="modeOrbit">Orbit (Standoff)</button>
-    <button id="modeArrive">Arrive</button>
-    <button id="modeFlee">Flee</button>
-    <button id="modeFlock">Flock (120 Agents)</button>
+  <h3>Steering Behaviors Sandbox</h3>
+
+  <div class="mode-bar" id="modeBar">
+    <button data-mode="flee" class="active">Flee (Panic Limit)</button>
+    <button data-mode="orbit">Orbit</button>
+    <button data-mode="arrive">Arrive</button>
+    <button data-mode="seek">Seek</button>
+    <button data-mode="wander">Wander</button>
+    <button data-mode="flock">Flock</button>
   </div>
+
+  <div class="ctrl-grid">
+    <label class="ctrl-item">
+      <span>Radius / Panic Dist: <strong id="valRadius">140</strong>px</span>
+      <input type="range" id="rngRadius" min="40" max="250" value="140">
+    </label>
+    <label class="ctrl-item">
+      <span>Agents: <strong id="valCount">45</strong></span>
+      <input type="range" id="rngCount" min="1" max="160" value="45">
+    </label>
+    <label class="ctrl-item">
+      <span>Max Speed: <strong id="valSpeed">190</strong></span>
+      <input type="range" id="rngSpeed" min="60" max="360" value="190">
+    </label>
+    <label class="ctrl-item">
+      <span>Max Force: <strong id="valForce">480</strong></span>
+      <input type="range" id="rngForce" min="100" max="1000" value="480">
+    </label>
+    <label class="ctrl-item">
+      <span>Separation: <strong id="valSep">1.4</strong>x</span>
+      <input type="range" id="rngSep" min="0" max="3" step="0.1" value="1.4">
+    </label>
+    <label class="ctrl-item" style="justify-content:center;">
+      <span><input type="checkbox" id="chkVectors" checked> Show Vectors &amp; Ring</span>
+      <span><input type="checkbox" id="chkBounce" checked> Bounce Arena Walls</span>
+    </label>
+  </div>
+
   <canvas id="canvas" width="540" height="340"></canvas>
   <pre id="output"></pre>
   <script type="module" src="./js/steering-demo.js"></script>

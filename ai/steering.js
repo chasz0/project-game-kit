@@ -1,7 +1,7 @@
 // Autonomous agent steering behaviors and force integration.
 // Agent shape: { x, y, vx, vy }
 //
-//   const force = steering.orbit(enemy, player, 180, enemy.maxSpeed);
+//   const force = steering.flee(enemy, player, enemy.maxSpeed, 160);
 //   steering.applyForce(enemy, force, enemy.maxForce, enemy.maxSpeed, dt);
 
 const clampVec = (out, maxLen) => {
@@ -32,10 +32,17 @@ export const steering = {
     return out;
   },
 
-  flee(agent, threat, maxSpeed, out = { x: 0, y: 0 }) {
+  // Flees when inside panicRadius; applies a braking force once at a safe distance.
+  flee(agent, threat, maxSpeed, panicRadius = 160, out = { x: 0, y: 0 }) {
     const dx = agent.x - threat.x;
     const dy = agent.y - threat.y;
     const distSq = dx * dx + dy * dy;
+
+    if (Number.isFinite(panicRadius) && distSq >= panicRadius * panicRadius) {
+      out.x = -(agent.vx || 0) * 4;
+      out.y = -(agent.vy || 0) * 4;
+      return out;
+    }
 
     if (distSq === 0) {
       out.x = maxSpeed;
@@ -43,7 +50,13 @@ export const steering = {
       return out;
     }
 
-    const inv = maxSpeed / Math.sqrt(distSq);
+    const dist = Math.sqrt(distSq);
+    // Taper desired speed near the outer edge of panicRadius for a smooth stop
+    const speed = Number.isFinite(panicRadius)
+      ? maxSpeed * Math.min(1, (panicRadius - dist) / (panicRadius * 0.35))
+      : maxSpeed;
+
+    const inv = speed / dist;
     out.x = dx * inv - (agent.vx || 0);
     out.y = dy * inv - (agent.vy || 0);
     return out;
@@ -55,8 +68,8 @@ export const steering = {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < 0.001) {
-      out.x = -(agent.vx || 0);
-      out.y = -(agent.vy || 0);
+      out.x = -(agent.vx || 0) * 4;
+      out.y = -(agent.vy || 0) * 4;
       return out;
     }
 
@@ -81,7 +94,6 @@ export const steering = {
     return this.seek(agent, future, maxSpeed, out);
   },
 
-  // Steers the agent to circle around target at a fixed standoff radius.
   orbit(agent, target, radius, maxSpeed, clockwise = true, out = { x: 0, y: 0 }) {
     const dx = agent.x - target.x;
     const dy = agent.y - target.y;
@@ -90,11 +102,9 @@ export const steering = {
     const nx = dx / dist;
     const ny = dy / dist;
 
-    // Tangent direction around the target
     const tx = clockwise ? -ny : ny;
     const ty = clockwise ? nx : -nx;
 
-    // Radial correction pulls agent back toward the orbit ring
     const radialError = (radius - dist) / Math.max(1, radius);
     const vx = tx + nx * radialError * 1.5;
     const vy = ty + ny * radialError * 1.5;
@@ -103,6 +113,24 @@ export const steering = {
     out.x = (vx / len) * maxSpeed - (agent.vx || 0);
     out.y = (vy / len) * maxSpeed - (agent.vy || 0);
     return out;
+  },
+
+  // Smooth random patrolling using a forward circle projection.
+  wander(agent, maxSpeed, { distance = 60, radius = 35, jitter = 0.35 } = {}, out = { x: 0, y: 0 }) {
+    agent._wanderAngle = (agent._wanderAngle || 0) + (Math.random() - 0.5) * 2 * jitter;
+
+    const vx = agent.vx || 0;
+    const vy = agent.vy || 0;
+    const spd = Math.sqrt(vx * vx + vy * vy);
+    const headingX = spd > 0.01 ? vx / spd : 1;
+    const headingY = spd > 0.01 ? vy / spd : 0;
+
+    const centerX = agent.x + headingX * distance;
+    const centerY = agent.y + headingY * distance;
+    const targetX = centerX + Math.cos(agent._wanderAngle) * radius;
+    const targetY = centerY + Math.sin(agent._wanderAngle) * radius;
+
+    return this.seek(agent, { x: targetX, y: targetY }, maxSpeed, out);
   },
 
   separate(agent, neighbors, desiredSeparation = 32, maxSpeed = 200, out = { x: 0, y: 0 }) {
@@ -143,7 +171,6 @@ export const steering = {
     return out;
   },
 
-  // Computes combined separation, alignment, and cohesion in a single pass.
   flock(agent, neighbors, {
     neighborRadius = 70,
     separationRadius = 28,
@@ -212,7 +239,6 @@ export const steering = {
     return out;
   },
 
-  // Clamps steering force, integrates velocity, and advances position by dt (ms).
   applyForce(agent, force, maxForce, maxSpeed, dt) {
     const dtSec = dt / 1000;
     clampVec(force, maxForce);

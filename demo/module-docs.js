@@ -740,30 +740,31 @@ console.log('At 250ms offset:', cam.offsetX, cam.offsetY);`
     file: 'ai/steering.js',
     demoUrl: '/demo/ai/steering-demo.html',
     importCode: "import { steering } from '@ai/steering.js';",
-    summary: 'Zero-allocation steering behaviors (seek, flee, arrive, pursue, orbit, separate, flock) and force integration for autonomous agents.',
+    summary: 'Zero-allocation steering behaviors (seek, flee with panicRadius limit, arrive, pursue, orbit, wander, separate, flock) and force integration.',
     api: [
       { sig: 'steering.seek(agent, target, maxSpeed, out)', desc: 'Steers agent {x, y, vx, vy} toward target {x, y}.' },
-      { sig: 'steering.flee(agent, threat, maxSpeed, out)', desc: 'Steers agent directly away from threat.' },
+      { sig: 'steering.flee(agent, threat, maxSpeed, panicRadius = 160, out)', desc: 'Flees inside panicRadius; applies braking force once outside safe distance.' },
       { sig: 'steering.arrive(agent, target, maxSpeed, slowRadius, out)', desc: 'Decelerates smoothly inside slowRadius.' },
-      { sig: 'steering.pursue(agent, target, maxSpeed, maxPred, out)', desc: 'Intercepts a moving target using velocity prediction.' },
       { sig: 'steering.orbit(agent, target, radius, maxSpeed, cw, out)', desc: 'Circles target at a fixed standoff radius.' },
+      { sig: 'steering.wander(agent, maxSpeed, opts, out)', desc: 'Smooth random patrolling force.' },
       { sig: 'steering.separate(agent, neighbors, sepDist, maxSpeed, out)', desc: 'Repels agent from crowding neighbors.' },
       { sig: 'steering.flock(agent, neighbors, opts, out)', desc: 'Combines separation, alignment, and cohesion in one pass.' },
       { sig: 'steering.applyForce(agent, force, maxForce, maxSpeed, dt)', desc: 'Clamps force, updates velocity, and advances position.' }
     ],
     examples: [
       {
-        title: 'Seek & Force Integration Step',
+        title: 'Flee with Panic Radius Limit & Braking',
         tag: 'Example 1',
-        desc: 'Computes a seek steering force toward (300, 100) and integrates one 16ms physics frame.',
-        code: `const agent = { x: 100, y: 100, vx: 0, vy: 0 };
-const target = { x: 300, y: 100 };
+        desc: 'Inside panicRadius (150px) the agent flees; outside 150px it brakes to a stop instead of running forever.',
+        code: `const threat = { x: 100, y: 100 };
+const closeAgent = { x: 140, y: 100, vx: 50, vy: 0 };
+const safeAgent  = { x: 300, y: 100, vx: 50, vy: 0 };
 
-const force = steering.seek(agent, target, 200);
-steering.applyForce(agent, force, 500, 200, 16);
+const fClose = steering.flee(closeAgent, threat, 200, 150);
+const fSafe  = steering.flee(safeAgent,  threat, 200, 150);
 
-console.log('Force:', force.x.toFixed(1), force.y.toFixed(1));
-console.log('Updated agent:', agent.x.toFixed(2), agent.vx.toFixed(1));`
+console.log('Inside 150px (flee force.x):', fClose.x.toFixed(1));
+console.log('Outside 150px (brake force.x):', fSafe.x.toFixed(1));`
       },
       {
         title: 'Ranged Enemy Orbiting Behavior',
@@ -776,18 +777,16 @@ const force = steering.orbit(enemy, player, 150, 180, true);
 console.log('Orbit tangent force:', force.x.toFixed(1), force.y.toFixed(1));`
       },
       {
-        title: 'Arrive Deceleration Inside Slow Radius',
+        title: 'Organic Patrol with wander()',
         tag: 'Example 3',
-        desc: 'Compares desired speed outside vs inside the 100px arrival slowing radius.',
-        code: `const target = { x: 200, y: 200 };
-const farAgent  = { x: 50,  y: 200, vx: 0, vy: 0 };
-const nearAgent = { x: 175, y: 200, vx: 0, vy: 0 };
+        desc: 'Generates smooth patrolling motion across consecutive steps.',
+        code: `const guard = { x: 100, y: 100, vx: 50, vy: 0 };
 
-const fFar  = steering.arrive(farAgent, target, 200, 100);
-const fNear = steering.arrive(nearAgent, target, 200, 100);
-
-console.log('Outside radius force.x:', fFar.x.toFixed(1));
-console.log('25px from target force.x:', fNear.x.toFixed(1));`
+for (let i = 1; i <= 3; i++) {
+  const f = steering.wander(guard, 120);
+  steering.applyForce(guard, f, 300, 120, 16);
+  console.log('Step', i, 'pos:', guard.x.toFixed(1), guard.y.toFixed(1));
+}`
       }
     ]
   },
@@ -852,30 +851,44 @@ console.log('Escape vector from wall tile:', escapeDir.x.toFixed(2), escapeDir.y
     file: 'ai/lineOfSight.js',
     demoUrl: '/demo/ai/lineOfSight-demo.html',
     importCode: "import { lineOfSight } from '@ai/lineOfSight.js';",
-    summary: 'Fast raycasting against boxes and circles, line-of-sight occlusion checks, and AI field-of-view cone queries.',
+    summary: 'Raycasting against boxes and circles, player visibility polygons (castVisionPolygon), and fog-of-war target filtering (filterVisible).',
     api: [
       { sig: 'lineOfSight.hasLineOfSight(a, b, obstacles)', desc: 'Returns true if no box or circle blocks segment a -> b.' },
       { sig: 'lineOfSight.raycast(x1, y1, x2, y2, obstacles, out)', desc: 'Returns closest hit {t, x, y, nx, ny, obstacle} or null.' },
-      { sig: 'lineOfSight.rayBox(x1, y1, x2, y2, box, out?)', desc: 'Slab test against top-left box {x, y, w, h}.' },
-      { sig: 'lineOfSight.rayCircle(x1, y1, x2, y2, circle, out?)', desc: 'Intersection against center circle {x, y, r}.' },
-      { sig: 'lineOfSight.inVisionCone(obs, angle, target, range, fov, obstacles?)', desc: 'Checks distance, FOV cone angle, and wall occlusion.' }
+      { sig: 'lineOfSight.inVisionCone(obs, angle, target, range, fov, obstacles?)', desc: 'Checks distance, FOV cone angle, and wall occlusion.' },
+      { sig: 'lineOfSight.filterVisible(obs, angle, targets, range, fov, obstacles, out)', desc: 'Fills out with only the targets currently visible to the player/observer.' },
+      { sig: 'lineOfSight.castVisionPolygon(origin, angle, fov, range, rays, obstacles, out)', desc: 'Casts a fan of rays to build a flashlight or 360-degree sight polygon.' }
     ],
     examples: [
       {
-        title: 'Checking Ranged Attack Line of Sight',
+        title: 'Filtering Enemies Visible to Player (filterVisible)',
         tag: 'Example 1',
-        desc: 'Tests whether a wall blocks a sniper shot between (0, 50) and (200, 50).',
-        code: `const sniper = { x: 0, y: 50 };
-const player = { x: 200, y: 50 };
-const walls = [{ x: 80, y: 20, w: 40, h: 60 }];
+        desc: 'Culls enemies hidden behind walls or outside the player flashlight cone.',
+        code: `const player = { x: 100, y: 100 };
+const walls = [{ x: 180, y: 60, w: 30, h: 80 }];
+const enemies = [
+  { id: 'visible_grunt', x: 150, y: 100 },
+  { id: 'hidden_behind_wall', x: 250, y: 100 },
+  { id: 'behind_player', x: 40, y: 100 }
+];
 
-console.log('Through wall LOS:', lineOfSight.hasLineOfSight(sniper, player, walls));
-console.log('Above wall LOS:', lineOfSight.hasLineOfSight({ x: 0, y: 5 }, { x: 200, y: 5 }, walls));`
+const seen = lineOfSight.filterVisible(player, 0, enemies, 300, Math.PI / 2, walls);
+console.log('Player sees:', seen.map((e) => e.id).join(', '));`
       },
       {
-        title: 'Laser Raycast Impact Point & Surface Normal',
+        title: 'Player Flashlight Polygon (castVisionPolygon)',
         tag: 'Example 2',
-        desc: 'Finds the exact impact coordinates and surface normal against mixed box and circle obstacles.',
+        desc: 'Casts 8 rays across a 90-degree cone and clips them against a wall.',
+        code: `const player = { x: 100, y: 100 };
+const walls = [{ x: 160, y: 50, w: 40, h: 100 }];
+
+const poly = lineOfSight.castVisionPolygon(player, 0, Math.PI / 2, 250, 5, walls);
+console.log('Vertices:', poly.length, '| Center ray clipped at x =', poly[2].x.toFixed(0));`
+      },
+      {
+        title: 'Laser Raycast Impact & Surface Normal',
+        tag: 'Example 3',
+        desc: 'Finds the exact impact coordinates and surface normal against mixed obstacles.',
         code: `const obstacles = [
   { x: 150, y: 0, w: 40, h: 100 },
   { x: 90, y: 50, r: 20 }
@@ -883,17 +896,6 @@ console.log('Above wall LOS:', lineOfSight.hasLineOfSight({ x: 0, y: 5 }, { x: 2
 
 const hit = lineOfSight.raycast(0, 50, 300, 50, obstacles);
 console.log('Hit at:', hit.x.toFixed(1), hit.y.toFixed(1), '| Normal:', hit.nx, hit.ny);`
-      },
-      {
-        title: 'Sentry Vision Cone Detection',
-        tag: 'Example 3',
-        desc: 'Checks if a player is within a 200px, 90-degree (PI/2) vision cone facing right (0 rad).',
-        code: `const sentry = { x: 100, y: 100 };
-const inFront = { x: 220, y: 120 };
-const behind  = { x: 20,  y: 100 };
-
-console.log('Target in front:', lineOfSight.inVisionCone(sentry, 0, inFront, 200, Math.PI / 2));
-console.log('Target behind:  ', lineOfSight.inVisionCone(sentry, 0, behind,  200, Math.PI / 2));`
       }
     ]
   }

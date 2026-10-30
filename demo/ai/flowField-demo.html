@@ -4,15 +4,63 @@
   <meta charset="UTF-8">
   <title>FlowField Demo</title>
   <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .ctrl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+      gap: 0.65rem;
+      margin: 0.75rem 0;
+      background: #090d15;
+      border: 1px solid var(--border-subtle);
+      padding: 0.85rem;
+      border-radius: 6px;
+    }
+    .ctrl-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .ctrl-item strong { color: var(--accent); }
+    .ctrl-item input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .tool-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .tool-bar button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
   <a href="/">← Back to Hub</a>
-  <h3>FlowField Swarm Pathfinding Demo</h3>
-  <div>
-    <button id="toggleVectorsBtn">Toggle Flow Arrows</button>
-    <button id="clearWallsBtn">Clear Walls</button>
-    <button id="mazeBtn">Generate Pillars</button>
+  <h3>FlowField Swarm Pathfinding Sandbox</h3>
+
+  <div class="tool-bar" id="toolBar">
+    <button data-tool="wall" class="active">Brush: Paint Walls</button>
+    <button data-tool="erase">Brush: Erase Walls</button>
+    <button data-tool="goal">Brush: Lock Goal</button>
+    <button id="mazeBtn">Preset: Pillars</button>
+    <button id="clearWallsBtn">Clear All Walls</button>
   </div>
+
+  <div class="ctrl-grid">
+    <label class="ctrl-item">
+      <span>Swarm Count: <strong id="valCount">600</strong></span>
+      <input type="range" id="rngCount" min="50" max="1200" value="600">
+    </label>
+    <label class="ctrl-item">
+      <span>Agent Speed: <strong id="valSpeed">125</strong></span>
+      <input type="range" id="rngSpeed" min="40" max="260" value="125">
+    </label>
+    <label class="ctrl-item" style="justify-content:center;">
+      <span><input type="checkbox" id="chkVectors" checked> Show Flow Arrows</span>
+      <span><input type="checkbox" id="chkHeatmap" checked> Show Cost Heatmap</span>
+    </label>
+  </div>
+
   <canvas id="canvas" width="540" height="360"></canvas>
   <pre id="output"></pre>
   <script type="module" src="./js/flowField-demo.js"></script>

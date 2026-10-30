@@ -1,11 +1,9 @@
-// Raycasting, visibility checks, and field-of-view sensors for AI perception.
+// Raycasting, visibility polygons, and field-of-view sensors for player and AI sight.
 //
-//   const canSee = lineOfSight.hasLineOfSight(enemy, player, obstacles);
-//   const hit = lineOfSight.raycast(x1, y1, x2, y2, obstacles, hitInfo);
+//   const visibleEnemies = lineOfSight.filterVisible(player, aimAngle, enemies, 260, Math.PI * 0.6, walls);
+//   const poly = lineOfSight.castVisionPolygon(player, aimAngle, Math.PI * 0.6, 260, 64, walls);
 
 export const lineOfSight = {
-  // Segment (x1,y1)->(x2,y2) vs top-left box {x, y, w, h}.
-  // Returns boolean if `out` is omitted, or fills `out = { t, x, y, nx, ny }` on hit.
   rayBox(x1, y1, x2, y2, box, out = null) {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -65,7 +63,6 @@ export const lineOfSight = {
     return out;
   },
 
-  // Segment (x1,y1)->(x2,y2) vs center circle {x, y, r}.
   rayCircle(x1, y1, x2, y2, circle, out = null) {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -101,7 +98,6 @@ export const lineOfSight = {
     return out;
   },
 
-  // Returns true if no obstacle in `obstacles` blocks the segment between a and b.
   hasLineOfSight(a, b, obstacles = []) {
     for (let i = 0; i < obstacles.length; i++) {
       const obs = obstacles[i];
@@ -113,7 +109,6 @@ export const lineOfSight = {
     return true;
   },
 
-  // Finds the closest intersection along segment (x1,y1)->(x2,y2) across all obstacles.
   raycast(x1, y1, x2, y2, obstacles = [], out = { t: 1, x: x2, y: y2, nx: 0, ny: 0, obstacle: null }) {
     let bestT = Infinity;
     let bestObstacle = null;
@@ -147,7 +142,6 @@ export const lineOfSight = {
     return out;
   },
 
-  // Checks if target is within maxRange, inside fovAngle (radians), and unoccluded.
   inVisionCone(observer, facingAngle, target, maxRange, fovAngle, obstacles = null) {
     const dx = target.x - observer.x;
     const dy = target.y - observer.y;
@@ -156,15 +150,51 @@ export const lineOfSight = {
     if (distSq > maxRange * maxRange) return false;
     if (distSq === 0) return true;
 
-    const dist = Math.sqrt(distSq);
-    const dirX = Math.cos(facingAngle);
-    const dirY = Math.sin(facingAngle);
-    const dot = (dx / dist) * dirX + (dy / dist) * dirY;
-    const minDot = Math.cos(fovAngle * 0.5);
+    if (fovAngle < Math.PI * 1.999) {
+      const dist = Math.sqrt(distSq);
+      const dirX = Math.cos(facingAngle);
+      const dirY = Math.sin(facingAngle);
+      const dot = (dx / dist) * dirX + (dy / dist) * dirY;
+      if (dot < Math.cos(fovAngle * 0.5)) return false;
+    }
 
-    if (dot < minDot) return false;
     if (obstacles && !this.hasLineOfSight(observer, target, obstacles)) return false;
-
     return true;
+  },
+
+  // Filters an array of targets and returns only those visible to the observer.
+  filterVisible(observer, facingAngle, targets, maxRange, fovAngle, obstacles = [], out = []) {
+    out.length = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const t = targets[i];
+      if (this.inVisionCone(observer, facingAngle, t, maxRange, fovAngle, obstacles)) {
+        out.push(t);
+      }
+    }
+    return out;
+  },
+
+  // Casts a fan of rays to build a player visibility polygon clipped against obstacles.
+  castVisionPolygon(origin, facingAngle, fovAngle, maxRange, rayCount = 60, obstacles = [], outPoints = []) {
+    outPoints.length = 0;
+    const fullCircle = fovAngle >= Math.PI * 1.999;
+    const startAngle = fullCircle ? 0 : facingAngle - fovAngle * 0.5;
+    const steps = Math.max(2, rayCount);
+    const stepAngle = fullCircle ? (Math.PI * 2) / steps : fovAngle / (steps - 1);
+    const hitScratch = { t: 1, x: 0, y: 0, nx: 0, ny: 0, obstacle: null };
+
+    for (let i = 0; i < steps; i++) {
+      const angle = startAngle + i * stepAngle;
+      const endX = origin.x + Math.cos(angle) * maxRange;
+      const endY = origin.y + Math.sin(angle) * maxRange;
+      const hit = this.raycast(origin.x, origin.y, endX, endY, obstacles, hitScratch);
+
+      if (hit) {
+        outPoints.push({ x: hit.x, y: hit.y, hit: true });
+      } else {
+        outPoints.push({ x: endX, y: endY, hit: false });
+      }
+    }
+    return outPoints;
   }
 };
