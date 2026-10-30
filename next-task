@@ -15,10 +15,11 @@
 14. spawner.js: waves and spawn rules.
 15. progression.js: XP, levels, and upgrade choices.
 16. loot.js and inventory.js.
-13. abilities.js: weapons and abilities with cooldowns.
-14. spawner.js: waves and spawn rules.
-15. progression.js: XP, levels, and upgrade choices.
-16. loot.js and inventory.js.
+19. save/load
+20. dev console
+21. dialogue
+22. audio manager
+23. procedural generation.
 
 
 

@@ -7,11 +7,26 @@
 </head>
 <body>
   <a href="/">← Back to Hub</a>
-  <h3>Timer Demo</h3>
-  <button id="skillBtn">Use Skill</button>
-  <div style="width: 300px; height: 20px; background: #333; margin-top: 10px;">
-    <div id="bar" style="width: 0%; height: 100%; background: #00ffcc;"></div>
+  <h3>General-Purpose Timer Demo</h3>
+
+  <div>
+    <button id="bombBtn">Plant Time Bomb (2.5s)</button>
+    <button id="defuseBtn">Defuse Bomb (Cancel)</button>
+    <button id="tweenBtn">Tween Door (1.2s)</button>
+    <button id="dotBtn">Toggle Poison Tick (500ms)</button>
   </div>
+
+  <div style="margin-top: 12px; font-family: monospace; font-size: 0.82rem; color: var(--muted);">
+    Bomb Fuse Progress:
+    <div style="width: 100%; max-width: 360px; height: 14px; background: #06090f; border: 1px solid var(--border); margin: 4px 0 10px;">
+      <div id="fuseBar" style="width: 0%; height: 100%; background: var(--danger);"></div>
+    </div>
+    Door Open Tween:
+    <div style="width: 100%; max-width: 360px; height: 14px; background: #06090f; border: 1px solid var(--border); margin: 4px 0;">
+      <div id="doorBar" style="width: 0%; height: 100%; background: var(--accent);"></div>
+    </div>
+  </div>
+
   <pre id="output"></pre>
   <script type="module" src="./js/timer-demo.js"></script>
   <script type="module" src="/demo/module-docs.js"></script>

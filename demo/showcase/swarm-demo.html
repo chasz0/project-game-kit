@@ -2,24 +2,223 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Swarm Survival — 12-Module Demo</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Swarm Survival — 20-Module Showcase</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    body {
+      padding: 1rem 1.5rem 4rem;
+      user-select: none;
+    }
+    .container {
+      max-width: 1220px;
+      margin: 0 auto;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .topbar a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.65rem;
+      border-radius: 4px;
+      font-family: monospace;
+      width: 130px;
+    }
+    button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 800px 1fr;
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 3rem;
+    }
+    .stage-wrap {
+      position: relative;
+      width: 800px;
+      height: 540px;
+      border: 1px solid var(--border);
+      background: #080b12;
+      overflow: hidden;
+      border-radius: 6px;
+    }
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 11, 18, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1.75rem;
+      text-align: center;
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: 1.75rem; margin-bottom: 0.35rem; color: var(--accent); }
+    .overlay p { color: var(--muted); margin-bottom: 1rem; max-width: 520px; font-size: 0.9rem; }
+    .upgrade-grid {
+      display: flex;
+      gap: 0.85rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .upgrade-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      width: 210px;
+      text-align: left;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .upgrade-btn:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .upgrade-btn .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: var(--amber);
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+    .upgrade-btn h4 { color: var(--accent); margin-bottom: 0.35rem; font-size: 0.98rem; }
+    .upgrade-btn span { font-size: 0.82rem; color: var(--muted); display: block; line-height: 1.4; }
+    .char-sheet {
+      width: 100%;
+      max-width: 700px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      text-align: left;
+      margin-bottom: 1.25rem;
+    }
+    .sheet-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1rem;
+    }
+    .sheet-box h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.35rem;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.83rem;
+      padding: 0.2rem 0;
+      font-family: monospace;
+    }
+    .stat-row span:first-child { color: var(--muted); }
+    .buff-list {
+      max-height: 175px;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .buff-item {
+      background: var(--panel-alt);
+      border-left: 3px solid var(--accent);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .buff-item.temp { border-left-color: var(--amber); }
+    .buff-item small { color: var(--muted); font-family: monospace; }
+    .telemetry {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.95rem;
+      font-family: monospace;
+      font-size: 0.77rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .hint {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .docs-section {
+      border-top: 1px solid var(--border);
+      padding-top: 2.5rem;
+      margin-top: 2rem;
+      user-select: text;
+    }
+    .docs-header { margin-bottom: 1.5rem; }
+    .docs-header h2 { font-size: 1.5rem; color: var(--accent); margin-bottom: 0.35rem; }
+    .docs-header p { color: var(--muted); font-size: 0.92rem; }
+    @media (max-width: 1120px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body>
+<body class="gk-doc-page">
   <div class="container">
     <div class="topbar">
       <div>
         <a href="/">← Back to Hub</a>
-        <strong style="margin-left: 1rem;">Swarm Survival (All 12 Modules)</strong>
+        <strong style="margin-left: 0.75rem; color: var(--accent);">Swarm Survival (All 20 Modules Active)</strong>
       </div>
       <div class="controls-bar">
-        <label for="seedInput" style="font-size:0.85rem; color:var(--muted);">Seed:</label>
+        <label for="seedInput" style="font-size:0.82rem; color:var(--muted);">Seed:</label>
         <input type="text" id="seedInput" value="miku-39" />
-        <button id="replaySeedBtn" class="primary">Restart (Same Seed)</button>
+        <button id="replaySeedBtn" class="primary">Restart Seed</button>
         <button id="randomSeedBtn">New Seed</button>
-        <button id="regenMapBtn">Regenerate Map (G)</button>
-        <button id="pauseBtn">Character / Pause (Tab)</button>
-        <button id="autoFireBtn">Auto-Fire: ON</button>
+        <button id="regenMapBtn">Regen Map (G)</button>
+        <button id="visionBtn">Sight Cone (C): OFF</button>
+        <button id="flowBtn">Flow Arrows (V): OFF</button>
+        <button id="pauseBtn">Character (Tab)</button>
       </div>
     </div>
 
@@ -30,255 +229,24 @@
           <div id="overlay" class="overlay hidden"></div>
         </div>
         <p class="hint">
-          <strong>Controls:</strong> WASD = Move &nbsp;|&nbsp; Mouse = Aim &nbsp;|&nbsp;
-          Space/Click = Shoot &nbsp;|&nbsp; Shift = Dash &nbsp;|&nbsp;
-          <strong>Tab / P = Character &amp; Buffs</strong> &nbsp;|&nbsp; <strong>G = Regenerate Map</strong> &nbsp;|&nbsp; Q/E = Zoom
+          <strong>Move:</strong> WASD &nbsp;|&nbsp;
+          <strong>Dash (2 Charges):</strong> Shift &nbsp;|&nbsp;
+          <strong>Shockwave Skill:</strong> Right-Click / F &nbsp;|&nbsp;
+          <strong>Use Inventory Items:</strong> [1] Medkit &nbsp;[2] Time Bomb &nbsp;[3] Speed Boost &nbsp;|&nbsp;
+          <strong>Pause:</strong> Tab / P
         </p>
       </div>
 
-      <div class="telemetry" id="telemetry">Initializing modules...</div>
+      <div class="telemetry" id="telemetry">Initializing 20 modules...</div>
     </div>
 
-    <!-- MODULE IMPLEMENTATION BREAKDOWN -->
+    <!-- 20-MODULE IMPLEMENTATION BREAKDOWN -->
     <section class="docs-section">
       <div class="docs-header">
-        <h2>How All 12 Modules Are Implemented</h2>
-        <p>Every system in this game is powered directly by the standalone modules in <code>core/</code> and <code>gameplay/</code>.</p>
+        <h2>How All 20 Modules Are Implemented in This Game</h2>
+        <p>Every snippet below is mounted in the reusable <code>CodeEditor</code> component. You can edit values and click <strong>Run Code</strong> to test how each module operates inside Swarm Survival.</p>
       </div>
-
-      <div class="docs-grid">
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Vec2 (Vector Math)</h3>
-            <code>core/vec2.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Handles player movement normalization, aiming direction vectors, and fast squared-distance checks for XP gem magnetism without triggering square roots.</p>
-          <pre><code>// Normalize movement input and scale by speed
-moveDir.normalize().mult(player.stats.get('speed') * (dt / 1000));
-player.pos.add(moveDir);
-
-// Aim vector from player to world mouse
-Vec2.sub(worldMouse, player.pos, aimDir).normalize();</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>EventEmitter (Pub/Sub Bus)</h3>
-            <code>core/events.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Decouples combat resolution from scoring, item drops, floating damage text, screen shake, and level-up transitions.</p>
-          <pre><code>events.on('enemyKilled', ({ enemy }) => {
-  kills++;
-  score += enemy.scoreValue;
-  activeGems.push(gemPool.get(enemy.x, enemy.y, enemy.xpValue));
-  if (rng.next() < 0.09) spawnDisposablePickup(enemy.x, enemy.y);
-});</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>GameLoop (Fixed Timestep)</h3>
-            <code>core/loop.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Runs physics, timers, and AI at a fixed 60Hz (<code>16.67ms</code> step) regardless of monitor refresh rate, and tracks live FPS.</p>
-          <pre><code>const loop = new GameLoop(
-  (dt) => {
-    fsm.update(dt);
-    input.update();
-  },
-  () => render(),
-  60
-);
-loop.start();</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>InputManager (Action Mapping)</h3>
-            <code>core/input.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Binds keys and mouse buttons to named actions, tracks single-frame presses (<code>isPressed</code>) for Dash/Pause, and computes canvas-relative mouse coordinates.</p>
-          <pre><code>const input = new InputManager(canvas);
-input.bind('dash', ['ShiftLeft', 'ShiftRight']);
-input.bind('pause', ['KeyP', 'Tab', 'Escape']);
-
-if (input.isPressed('dash') && dashReady) { /* trigger dash */ }</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>TimerManager (Delta-Time Timers)</h3>
-            <code>core/timer.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Drives repeating wave spawners (<code>every</code>), weapon fire-rate delays, dash cooldown progress bars, and temporary 10s ground buff durations. Freezes automatically when paused.</p>
-          <pre><code>// Repeating wave spawner
-timer.every(3200, () => spawnWaveBatch());
-
-// Dash cooldown with progress callback for HUD bar
-timer.add(1800, () => { dashReady = true; }, (p) => { dashCooldownRatio = 1 - p; });</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Random (Seeded Mulberry32 PRNG)</h3>
-            <code>core/random.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Ensures obstacle layouts, enemy wave compositions, item drops, and level-up upgrade cards are 100% reproducible when replaying the same seed.</p>
-          <pre><code>const rng = new Random(seedInput.value);
-const w = rng.int(75, 160);
-const angle = rng.range(0, Math.PI * 2);
-const itemType = PICKUP_TYPES[rng.choice(keys)];</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Pool (Object Pooling)</h3>
-            <code>gameplay/pool.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Recycles bullets, enemies, XP gems, ground pickups, particles, and floating damage text to prevent garbage collection stutter during heavy waves.</p>
-          <pre><code>const textPool = new Pool({
-  create: () => ({ x: 0, y: 0, vy: -45, text: '', color: '#fff', life: 0, maxLife: 550 }),
-  init: (t, x, y, text, color, maxLife = 550) => {
-    t.x = x; t.y = y; t.text = text; t.color = color; t.life = 0; t.maxLife = maxLife;
-  },
-  size: 60, maxSize: 300
-});</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>SpatialHash (2D Broad-Phase Grid)</h3>
-            <code>gameplay/spatialHash.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Queries only nearby enemies within a cell radius for bullet hits, enemy-to-enemy flock separation, and Bomb AoE blasts in 0 allocations.</p>
-          <pre><code>// Only check enemies in cells overlapping the bullet
-grid.queryRadius(b.x, b.y, b.r + 24, queryScratch);
-for (let j = 0; j < queryScratch.length; j++) {
-  const e = queryScratch[j];
-  if (collision.circleCircle(b, e)) { /* narrow-phase hit */ }
-}</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>collision (Overlap &amp; Manifolds)</h3>
-            <code>gameplay/collision.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Resolves narrow-phase hits and computes penetration depth + normal vectors (<code>nx, ny, depth</code>) to push overlapping enemies apart and eject entities from walls.</p>
-          <pre><code>const hit = collision.circleCircleInfo(e, other, manifold);
-if (hit) {
-  e.x += hit.nx * hit.depth * 0.5;
-  e.y += hit.ny * hit.depth * 0.5;
-}</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Stats (Health &amp; Modifiers)</h3>
-            <code>gameplay/stats.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Tracks HP, clamping, killing blows, and calculates live attributes from stacked permanent upgrades and temporary ground buffs.</p>
-          <pre><code>// Apply +55% temporary speed boost
-player.stats.addModifier('temp_haste', 'speed', 'percent', 0.55);
-
-// Returnstrue only once on the killing hit
-if (e.stats.takeDamage(b.damage)) events.emit('enemyKilled', { enemy: e });</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>StateMachine (Game Flow)</h3>
-            <code>gameplay/stateMachine.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Manages clean state transitions between <code>playing</code>, <code>paused</code> (Character Sheet), <code>levelup</code> (Upgrade Selection), and <code>gameover</code>.</p>
-          <pre><code>fsm.add('playing', { enter: () => hideOverlay(), update: (dt) => updateWorld(dt) });
-fsm.add('paused',  { enter: () => renderCharSheet(), update: () => checkUnpause() });
-fsm.change('playing');</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Camera (Viewport &amp; Projection)</h3>
-            <code>gameplay/camera.js</code>
-          </div>
-          <p><strong>Purpose:</strong> Smoothly follows the player with frame-rate independent damping, applies damage/explosion trauma shake, zooms, and converts mouse screen coordinates to world coordinates.</p>
-          <pre><code>camera.screenToWorld(input.mouse.x, input.mouse.y, worldMouse);
-camera.follow(player.pos, 0.12, dt);
-camera.update(dt);
-camera.apply(ctx);</code></pre>
-        </div>
-      </div>
-
-      <!-- FEATURE IMPLEMENTATION BREAKDOWN -->
-      <div class="docs-header">
-        <h2>Feature-by-Feature Implementation</h2>
-        <p>How multiple modules combine to build specific gameplay mechanics.</p>
-      </div>
-
-      <div class="docs-grid">
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Floating Combat Text</h3>
-            <code>Pool + Camera</code>
-          </div>
-          <p><strong>How it works:</strong> When a bullet hits an enemy or the player collects a pickup, a text object is pulled from <code>textPool</code> at the entity's world coordinates. During <code>render()</code> while <code>camera.apply(ctx)</code> is active, it rises and fades out before returning to the pool.</p>
-          <pre><code>const spawnFloatingText = (x, y, text, color = '#fff', duration = 550) => {
-  activeTexts.push(textPool.get(x + rng.range(-8, 8), y - 10, text, color, duration));
-};
-
-// On bullet hit:
-spawnFloatingText(e.x, e.y - e.r, `-${Math.round(b.damage)}`, '#ffffff');</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Disposable Ground Items &amp; Timed Buffs</h3>
-            <code>Pool + Stats + TimerManager</code>
-          </div>
-          <p><strong>How it works:</strong> Ground items are pooled in <code>pickupPool</code>. Timed buffs (Speed Boost, Rapid Fire) register a modifier on <code>player.stats</code> and start a <code>timer.add()</code> tween that updates the HUD bar and removes the modifier on completion. Picking up a duplicate refreshes the timer.</p>
-          <pre><code>const applyTemporaryBuff = (type) => {
-  if (activeTempBuffs.has(type.id)) timer.cancel(activeTempBuffs.get(type.id).timerRef);
-  const modId = `temp_${type.id}`;
-  player.stats.addModifier(modId, type.stat, type.modType, type.val);
-
-  const timerRef = timer.add(
-    type.duration,
-    () => player.stats.removeModifier(modId),
-    (progress) => { state.remainingMs = type.duration * (1 - progress); }
-  );
-};</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Live Map Regeneration Mid-Run</h3>
-            <code>Random + collision + SpatialHash</code>
-          </div>
-          <p><strong>How it works:</strong> Pressing <code>G</code> generates a new set of obstacles from the seeded RNG, then runs <code>collision.circleBoxInfo()</code> across the player, active enemies, and pickups to immediately push any trapped entity outside the new walls and updates the <code>SpatialHash</code>.</p>
-          <pre><code>for (let i = 0; i < activeEnemies.length; i++) {
-  const e = activeEnemies[i];
-  for (let j = 0; j < obstacles.length; j++) {
-    const hit = collision.circleBoxInfo(e, obstacles[j], manifold);
-    if (hit) { e.x += hit.nx * hit.depth; e.y += hit.ny * hit.depth; }
-  }
-  grid.update(e);
-}</code></pre>
-        </div>
-
-        <div class="doc-card">
-          <div class="doc-card-head">
-            <h3>Pause &amp; Character Sheet Inspector</h3>
-            <code>StateMachine + Stats + TimerManager</code>
-          </div>
-          <p><strong>How it works:</strong> Switching <code>fsm.change('paused')</code> stops <code>playing.update(dt)</code> from running. Because <code>timer.update(dt)</code> is only called inside the <code>playing</code> state, all wave spawners, dash cooldowns, and 10-second buffs freeze automatically while you inspect <code>player.stats</code>.</p>
-          <pre><code>fsm.add('paused', {
-  enter: () => renderCharacterSheetOverlay(),
-  update: () => {
-    if (input.isPressed('pause')) fsm.change('playing');
-  }
-});</code></pre>
-        </div>
-      </div>
+      <div class="gk-examples-grid" id="showcase-docs-mount"></div>
     </section>
   </div>
 

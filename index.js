@@ -11,6 +11,11 @@ export { collision } from './gameplay/collision.js';
 export { Stats } from './gameplay/stats.js';
 export { StateMachine } from './gameplay/stateMachine.js';
 export { Camera } from './gameplay/camera.js';
+export { AbilityManager } from './gameplay/abilities.js';
+export { WaveSpawner } from './gameplay/spawner.js';
+export { Progression } from './gameplay/progression.js';
+export { LootTable } from './gameplay/loot.js';
+export { Inventory } from './gameplay/inventory.js';
 
 export { steering } from './ai/steering.js';
 export { FlowField } from './ai/flowField.js';

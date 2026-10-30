@@ -272,56 +272,64 @@ console.log('After blur:', inp.isDown('right'));`
     file: 'core/timer.js',
     demoUrl: '/demo/core/timer-demo.html',
     importCode: "import { TimerManager, timer } from '@core/timer.js';",
-    summary: 'Delta-time driven delays, progress tweens, and repeating intervals that pause automatically when update(dt) is not called.',
+    summary: 'General-purpose delta-time scheduler for one-shot delays (bomb fuses, buff durations), progress tweens (0..1 animations), and repeating intervals (poison ticks, clocks).',
     api: [
-      { sig: 'timer.add(durationMs, onComplete, onUpdate?)', desc: 'Fires onComplete after durationMs; calls onUpdate(0..1).' },
-      { sig: 'timer.every(intervalMs, onTick)', desc: 'Calls onTick repeatedly every intervalMs.' },
-      { sig: 'timer.cancel(handle)', desc: 'Cancels an active timer handle.' },
+      { sig: 'timer.add(durationMs, onComplete, onUpdate?)', desc: 'Schedules a one-shot callback and optional 0..1 progress tween.' },
+      { sig: 'timer.every(intervalMs, onTick)', desc: 'Runs onTick repeatedly every intervalMs until cancelled.' },
+      { sig: 'timer.cancel(handle)', desc: 'Cancels a scheduled delay or repeating interval.' },
       { sig: 'timer.clear()', desc: 'Removes all scheduled timers.' },
       { sig: 'timer.update(dt)', desc: 'Advances all active timers by dt milliseconds.' }
     ],
     examples: [
       {
-        title: 'Cooldown Progress Tween',
+        title: 'Time Bomb Fuse & Defuse (add + cancel)',
         tag: 'Example 1',
-        desc: 'Steps through a 1000ms cooldown and logs the tween progress each tick.',
+        desc: 'Schedules a 2000ms bomb fuse with a progress tween, then cancels (defuses) it at 1000ms.',
         code: `const tm = new TimerManager();
+let exploded = false;
 
-tm.add(
-  1000,
-  () => console.log('Cooldown ready!'),
-  (p) => console.log('Progress:', (p * 100).toFixed(0) + '%')
+const bomb = tm.add(
+  2000,
+  () => { exploded = true; },
+  (p) => console.log('Fuse at:', (p * 100).toFixed(0) + '%')
 );
+
+tm.update(1000);
+tm.cancel(bomb);
+tm.update(1500);
+console.log('Exploded after defuse:', exploded);`
+      },
+      {
+        title: 'Repeating Poison Status Effect (every)',
+        tag: 'Example 2',
+        desc: 'Applies a 5-damage poison tick every 500ms and stops after 3 ticks.',
+        code: `const tm = new TimerManager();
+let hp = 100, ticks = 0;
+
+const dot = tm.every(500, () => {
+  hp -= 5;
+  ticks++;
+  if (ticks === 3) tm.cancel(dot);
+});
+
+for (let i = 0; i < 5; i++) tm.update(500);
+console.log('Ticks fired:', ticks, '| Remaining HP:', hp);`
+      },
+      {
+        title: 'Tweening a Value from A to B',
+        tag: 'Example 3',
+        desc: 'Uses the 0..1 progress parameter in onUpdate to interpolate a door position from 0 to 200.',
+        code: `const tm = new TimerManager();
+let doorX = 0;
+
+tm.add(1000, null, (progress) => {
+  doorX = 0 + (200 - 0) * progress;
+  console.log('Door X:', doorX);
+});
 
 tm.update(250);
 tm.update(500);
 tm.update(250);`
-      },
-      {
-        title: 'Repeating Spawner & Cancellation',
-        tag: 'Example 2',
-        desc: 'Runs a repeating interval every 400ms and cancels it after 3 waves.',
-        code: `const tm = new TimerManager();
-let wave = 0;
-
-const job = tm.every(400, () => {
-  wave++;
-  console.log('Spawned wave', wave);
-  if (wave === 3) tm.cancel(job);
-});
-
-for (let i = 0; i < 5; i++) tm.update(400);`
-      },
-      {
-        title: 'Chronological Execution Order',
-        tag: 'Example 3',
-        desc: 'Timers finishing on the same frame fire in registration order.',
-        code: `const tm = new TimerManager();
-
-tm.add(200, () => console.log('First: Apply buff'));
-tm.add(200, () => console.log('Second: Fire projectile'));
-
-tm.update(200);`
       }
     ]
   },
@@ -898,7 +906,275 @@ const hit = lineOfSight.raycast(0, 50, 300, 50, obstacles);
 console.log('Hit at:', hit.x.toFixed(1), hit.y.toFixed(1), '| Normal:', hit.nx, hit.ny);`
       }
     ]
-  }
+  },
+  {
+    id: 'abilities',
+    name: 'AbilityManager',
+    tier: 'Tier 2: Gameplay',
+    file: 'gameplay/abilities.js',
+    demoUrl: '/demo/gameplay/abilities-demo.html',
+    importCode: "import { AbilityManager } from '@gameplay/abilities.js';",
+    summary: 'Manages weapons and active skills with cooldowns, multi-charge regeneration, active durations, cooldown scaling, and auto-casting.',
+    api: [
+      { sig: 'abilities.register(id, { cooldown, charges, duration, auto, onUse, onEnd })', desc: 'Registers a weapon or ability.' },
+      { sig: 'abilities.canUse(id)', desc: 'Returns true if at least 1 charge is available.' },
+      { sig: 'abilities.use(id, context, cooldownScale = 1)', desc: 'Consumes a charge, starts recharge timer, and triggers onUse.' },
+      { sig: 'abilities.update(dt, context, cooldownScale = 1)', desc: 'Advances recharge timers, active durations, and auto-cast skills.' },
+      { sig: 'abilities.getState(id)', desc: 'Returns { ready, charges, maxCharges, cooldownLeft, cooldownRatio, isActive }.' }
+    ],
+    examples: [
+      {
+        title: 'Multi-Charge Dash with Cooldown Recovery',
+        tag: 'Example 1',
+        desc: 'Registers a 2-charge Dash with a 1000ms recharge per charge and steps through time.',
+        code: `const skills = new AbilityManager();
+skills.register('dash', { cooldown: 1000, charges: 2 });
+
+skills.use('dash');
+skills.use('dash');
+console.log('After 2 dashes:', skills.getState('dash').charges, 'charges');
+
+skills.update(1000);
+console.log('After 1000ms:', skills.getState('dash').charges, 'charge recovered');`
+      },
+      {
+        title: 'Cooldown Reduction Scaling (Haste)',
+        tag: 'Example 2',
+        desc: 'Passing cooldownScale = 0.5 reduces a 2000ms cooldown to 1000ms.',
+        code: `const skills = new AbilityManager();
+skills.register('nova', { cooldown: 2000, charges: 1 });
+
+skills.use('nova', null, 0.5);
+console.log('Scaled cooldown left:', skills.getState('nova').cooldownLeft + 'ms');`
+      },
+      {
+        title: 'Auto-Casting Primary Weapon',
+        tag: 'Example 3',
+        desc: 'Setting auto: true fires the weapon automatically whenever its cooldown finishes.',
+        code: `const skills = new AbilityManager();
+let shots = 0;
+skills.register('gun', { cooldown: 200, auto: true, onUse: () => shots++ });
+
+skills.update(200);
+skills.update(200);
+skills.update(200);
+console.log('Auto shots fired:', shots);`
+      }
+    ]
+  },
+  {
+    id: 'spawner',
+    name: 'WaveSpawner',
+    tier: 'Tier 2: Gameplay',
+    file: 'gameplay/spawner.js',
+    demoUrl: '/demo/gameplay/spawner-demo.html',
+    importCode: "import { WaveSpawner } from '@gameplay/spawner.js';",
+    summary: 'Timed wave scheduler with weighted enemy pools and ring or perimeter spawn geometry.',
+    api: [
+      { sig: 'new WaveSpawner({ rng = Math.random })', desc: 'Creates a wave spawner using the provided PRNG function.' },
+      { sig: 'spawner.addWave({ duration, interval, count, shape, minRadius, maxRadius, types })', desc: 'Appends a wave configuration.' },
+      { sig: 'spawner.update(dt, centerX, centerY, onSpawn)', desc: 'Advances timers and invokes onSpawn({ x, y, type, wave }).' },
+      { sig: 'spawner.pointOnRing(cx, cy, minR, maxR, out)', desc: 'Returns a random point inside the annulus around (cx, cy).' },
+      { sig: 'spawner.pointOnPerimeter(cx, cy, w, h, out)', desc: 'Returns a random point along the edges of a rectangle.' }
+    ],
+    examples: [
+      {
+        title: 'Seeded Ring Wave Spawning',
+        tag: 'Example 1',
+        desc: 'Uses Random.next() to deterministically spawn enemies in a ring around (0, 0).',
+        code: `const rng = new Random('wave-seed-1');
+const spawner = new WaveSpawner({ rng: () => rng.next() });
+
+spawner.addWave({
+  duration: 10000, interval: 1000, count: 3,
+  shape: 'ring', minRadius: 200, maxRadius: 300,
+  types: [{ id: 'grunt', weight: 3 }, { id: 'tank', weight: 1 }]
+});
+
+const spawned = [];
+spawner.update(1000, 0, 0, (s) => spawned.push(s.type + '@(' + s.x.toFixed(0) + ',' + s.y.toFixed(0) + ')'));
+console.log('Spawned:', spawned.join(' | '));`
+      },
+      {
+        title: 'Wave Progression Over Time',
+        tag: 'Example 2',
+        desc: 'Automatically advances from Wave 1 to Wave 2 when wave duration elapses.',
+        code: `const spawner = new WaveSpawner();
+spawner.addWave({ duration: 5000, interval: 2500, count: 2 });
+spawner.addWave({ duration: 5000, interval: 1000, count: 5 });
+
+spawner.update(5000, 0, 0);
+console.log('Current Wave Number:', spawner.waveNumber);`
+      },
+      {
+        title: 'Arena Perimeter Spawn Coordinates',
+        tag: 'Example 3',
+        desc: 'Generates spawn coordinates along the border of an 800x600 screen.',
+        code: `const spawner = new WaveSpawner();
+const pt = spawner.pointOnPerimeter(0, 0, 800, 600);
+console.log('Perimeter point:', pt.x.toFixed(1), pt.y.toFixed(1));`
+      }
+    ]
+  },
+  {
+    id: 'progression',
+    name: 'Progression',
+    tier: 'Tier 2: Gameplay',
+    file: 'gameplay/progression.js',
+    demoUrl: '/demo/gameplay/progression-demo.html',
+    importCode: "import { Progression } from '@gameplay/progression.js';",
+    summary: 'Manages XP leveling curves, pending level-up queues, and weighted upgrade drafting with maxRank caps.',
+    api: [
+      { sig: 'new Progression({ baseXp, growthFactor, linearStep })', desc: 'Configures the XP curve.' },
+      { sig: 'prog.registerUpgrade({ id, title, desc, maxRank, weight, apply })', desc: 'Adds an upgrade to the draft pool.' },
+      { sig: 'prog.addXp(amount)', desc: 'Adds XP and returns how many levels were gained.' },
+      { sig: 'prog.rollChoices(count = 3, rng)', desc: 'Drafts up to count unique upgrades that have not reached maxRank.' },
+      { sig: 'prog.selectUpgrade(id, context)', desc: 'Increments upgrade rank, decrements pendingLevels, and calls apply(rank).' }
+    ],
+    examples: [
+      {
+        title: 'XP Curve & Multi-Level Gain',
+        tag: 'Example 1',
+        desc: 'Adding a large XP drop processes multiple level-ups and queues them in pendingLevels.',
+        code: `const prog = new Progression({ baseXp: 10, growthFactor: 1.5, linearStep: 5 });
+const gained = prog.addXp(35);
+
+console.log('Levels gained:', gained, '| New Level:', prog.level);
+console.log('XP:', prog.xp + '/' + prog.xpToNext, '| Pending drafts:', prog.pendingLevels);`
+      },
+      {
+        title: 'Weighted Upgrade Drafting & Max Rank Exclusion',
+        tag: 'Example 2',
+        desc: 'Once an upgrade hits maxRank, rollChoices() automatically excludes it from future drafts.',
+        code: `const prog = new Progression();
+prog.registerUpgrade({ id: 'pierce', title: 'Pierce', maxRank: 1 });
+prog.registerUpgrade({ id: 'speed',  title: 'Speed',  maxRank: 3 });
+
+prog.selectUpgrade('pierce');
+const choices = prog.rollChoices(3);
+console.log('Available after maxing pierce:', choices.map((c) => c.id).join(', '));`
+      },
+      {
+        title: 'Applying Upgrade Callbacks to Stats',
+        tag: 'Example 3',
+        desc: 'Connects selectUpgrade() directly to a player Stats instance.',
+        code: `const stats = new Stats({ damage: 20 });
+const prog = new Progression();
+
+prog.registerUpgrade({
+  id: 'dmg',
+  maxRank: 5,
+  apply: (rank) => stats.addModifier('dmg_perk', 'damage', 'percent', rank * 0.25)
+});
+
+prog.selectUpgrade('dmg');
+prog.selectUpgrade('dmg');
+console.log('Rank:', prog.getRank('dmg'), '| Effective Damage:', stats.get('damage'));`
+      }
+    ]
+  },
+  {
+    id: 'loot',
+    name: 'LootTable',
+    tier: 'Tier 2: Gameplay',
+    file: 'gameplay/loot.js',
+    demoUrl: '/demo/gameplay/loot-demo.html',
+    importCode: "import { LootTable } from '@gameplay/loot.js';",
+    summary: 'Weighted drop table supporting overall drop probability, quantity ranges, guaranteed boss drops, and multi-roll aggregation.',
+    api: [
+      { sig: 'new LootTable({ dropChance = 1.0 })', desc: 'Creates a loot table with an overall drop probability in [0, 1].' },
+      { sig: 'table.add(id, { weight, min, max, guaranteed })', desc: 'Adds a drop entry to the table.' },
+      { sig: 'table.roll(rng = Math.random)', desc: 'Returns an array of { id, count } drops.' },
+      { sig: 'table.rollMultiple(rolls, rng)', desc: 'Rolls multiple times and merges stack counts by item ID.' }
+    ],
+    examples: [
+      {
+        title: 'Seeded Mob Drop Roll',
+        tag: 'Example 1',
+        desc: 'Rolls a weighted drop table using a seeded Random instance.',
+        code: `const rng = new Random('loot-seed-7');
+const table = new LootTable({ dropChance: 1.0 })
+  .add('gold',   { weight: 70, min: 5, max: 15 })
+  .add('medkit', { weight: 25, min: 1, max: 1 })
+  .add('relic',  { weight: 5,  min: 1, max: 1 });
+
+console.log('Drop:', table.roll(() => rng.next()));`
+      },
+      {
+        title: 'Boss Chest with Guaranteed Item + Bonus Rolls',
+        tag: 'Example 2',
+        desc: 'Combines a guaranteed boss core with weighted bonus drops.',
+        code: `const chest = new LootTable()
+  .add('boss_core', { guaranteed: true, min: 1, max: 1 })
+  .add('gold',      { weight: 80, min: 10, max: 20 })
+  .add('gem',       { weight: 20, min: 2,  max: 5 });
+
+console.log('Chest contents:', chest.rollMultiple(3));`
+      },
+      {
+        title: 'Drop Chance Filtering',
+        tag: 'Example 3',
+        desc: 'With dropChance: 0, only guaranteed items drop.',
+        code: `const strictTable = new LootTable({ dropChance: 0 })
+  .add('key',   { guaranteed: true })
+  .add('trash', { weight: 100 });
+
+console.log('Result:', strictTable.roll());`
+      }
+    ]
+  },
+  {
+    id: 'inventory',
+    name: 'Inventory',
+    tier: 'Tier 2: Gameplay',
+    file: 'gameplay/inventory.js',
+    demoUrl: '/demo/gameplay/inventory-demo.html',
+    importCode: "import { Inventory } from '@gameplay/inventory.js';",
+    summary: 'Slot-capped inventory manager with per-item stack limits, overflow reporting, and consumable item callbacks.',
+    api: [
+      { sig: 'new Inventory({ maxSlots = 12 })', desc: 'Creates an inventory with a fixed slot capacity.' },
+      { sig: 'inv.defineItem(id, { name, maxStack, consumable, onUse })', desc: 'Registers stack size and use behavior for an item ID.' },
+      { sig: 'inv.add(id, count = 1)', desc: 'Fills existing stacks then new slots; returns { added, overflow }.' },
+      { sig: 'inv.remove(id, count = 1) / inv.use(id, context)', desc: 'Removes items or triggers onUse and consumes 1 stack unit.' },
+      { sig: 'inv.count(id) / inv.has(id, minCount)', desc: 'Queries total quantity across all slots.' }
+    ],
+    examples: [
+      {
+        title: 'Auto-Splitting Stacks Across Slots',
+        tag: 'Example 1',
+        desc: 'Adding 7 potions when maxStack is 3 splits them into slots of 3, 3, and 1.',
+        code: `const inv = new Inventory({ maxSlots: 4 });
+inv.defineItem('potion', { name: 'Health Potion', maxStack: 3 });
+
+inv.add('potion', 7);
+console.log('Slots used:', inv.usedSlots, '| Slot counts:', inv.slots.map((s) => s.count).join(', '));`
+      },
+      {
+        title: 'Full Inventory Overflow Reporting',
+        tag: 'Example 2',
+        desc: 'Reports exact overflow count when slots reach capacity.',
+        code: `const inv = new Inventory({ maxSlots: 2 });
+inv.defineItem('bomb', { maxStack: 2 });
+
+const res = inv.add('bomb', 6);
+console.log('Added:', res.added, '| Overflow left on ground:', res.overflow);`
+      },
+      {
+        title: 'Using a Consumable Item with Stats',
+        tag: 'Example 3',
+        desc: 'Consumes 1 medkit from the inventory to heal a damaged player.',
+        code: `const player = new Stats({ maxHealth: 100 });
+player.takeDamage(60);
+
+const inv = new Inventory();
+inv.defineItem('medkit', { consumable: true, onUse: (p) => p.heal(50) });
+inv.add('medkit', 2);
+
+inv.use('medkit', player);
+console.log('Player HP:', player.health, '| Medkits left:', inv.count('medkit'));`
+      }
+    ]
+  },
 ];
 
 export function mountModuleEditors(container, mod) {
