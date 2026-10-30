@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Procedural Generation Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .ctrl-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.65rem;
+      align-items: center;
+    }
+    .ctrl-bar button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Seeded Procedural Map Generator Demo</h3>
+
+  <div class="ctrl-bar" id="algoBar">
+    <button data-algo="cave" class="active">Cellular Automata Cave</button>
+    <button data-algo="dungeon">Dungeon Rooms &amp; Corridors</button>
+    <button data-algo="arena">Tactical Pillar Arena</button>
+    <input type="text" id="seedInput" value="sector-39" style="width:120px;">
+    <button id="btnRoll">Roll New Seed</button>
+  </div>
+
+  <canvas id="canvas" width="520" height="360"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/procgen-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>
