@@ -1,4 +1,5 @@
 import { WaveSpawner } from '@gameplay/spawner.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -34,10 +35,9 @@ const onSpawn = (s) => {
   entities.push({ x: s.x, y: s.y, type: s.type, life: 4000 });
 };
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  player.x = e.clientX - rect.left;
-  player.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  player.x = input.mouse.x;
+  player.y = input.mouse.y;
 });
 
 document.getElementById('btnBurst').addEventListener('click', () => {

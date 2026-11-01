@@ -1,4 +1,5 @@
 import { FloatingTextSystem } from '@ui/floatingText.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -8,11 +9,8 @@ const combatText = new FloatingTextSystem({ maxItems: 200, preallocate: 50 });
 const dummy = { x: canvas.width / 2, y: canvas.height / 2 + 20, r: 22 };
 
 canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
   const dmg = Math.floor(15 + Math.random() * 35);
-  combatText.spawn(mx, my, `-${dmg}`, { color: '#f3ead3', jitterX: 10 });
+  combatText.spawn(input.mouse.x, input.mouse.y, `-${dmg}`, { color: '#f3ead3', jitterX: 10 });
 });
 
 document.getElementById('btnDmg').addEventListener('click', () => {

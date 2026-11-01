@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dev Console &amp; Live Profiler Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Dev Console, Command Runner &amp; Canvas Profiler Demo</h3>
+
+  <div>
+    <button id="btnToggleConsole">Toggle Console Drawer (~)</button>
+    <button id="btnSpawn10">Run: spawn 15</button>
+    <button id="btnToggleGrid">Run: grid</button>
+    <button id="btnToggleHitboxes">Run: hitboxes</button>
+    <button id="btnClearMobs">Run: nuke</button>
+  </div>
+
+  <canvas id="canvas" width="560" height="330" style="margin-top:0.5rem;"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/devConsole-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

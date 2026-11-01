@@ -55,5 +55,12 @@ export default defineConfig({
       '@world': path.resolve(__dirname, './world'),
       '@ui': path.resolve(__dirname, './ui')
     }
+  },
+  test: {
+    environment: 'node',
+    include: ['tests/**/*.test.js'],
+    benchmark: {
+      include: ['tests/**/*.bench.js']
+    }
   }
 });

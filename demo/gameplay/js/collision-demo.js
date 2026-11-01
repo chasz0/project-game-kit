@@ -1,4 +1,5 @@
 import { collision } from '@gameplay/collision.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -17,10 +18,9 @@ const bodies = Array.from({ length: 25 }, (_, i) => ({
   r: 12,
 }));
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  cursor.x = e.clientX - rect.left;
-  cursor.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  cursor.x = input.mouse.x;
+  cursor.y = input.mouse.y;
 });
 
 canvas.addEventListener('click', () => {

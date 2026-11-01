@@ -1,4 +1,5 @@
 import { SpatialHash } from '@gameplay/spatialHash.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -27,10 +28,9 @@ for (let i = 0; i < ENTITY_COUNT; i++) {
   grid.insert(entity);
 }
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  mouse.x = input.mouse.x;
+  mouse.y = input.mouse.y;
 });
 
 const loop = () => {

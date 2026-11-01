@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weapon Patterns &amp; Projectiles Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .weapon-bar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+    .weapon-bar button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Swarm Weapon Patterns &amp; Projectile Behaviors Demo</h3>
+
+  <div class="weapon-bar" id="weaponBar">
+    <button data-mode="spread" class="active">1. Shotgun Spread Cone</button>
+    <button data-mode="ricochet">2. Chain Ricochet (4 Bounces)</button>
+    <button data-mode="boomerang">3. Returning Boomerang Glaives</button>
+    <button data-mode="homing">4. Homing Seeker Barrage</button>
+    <button id="btnOrbiters">Toggle Guardian Orbiters: ON</button>
+    <button id="btnZone">Spawn Frost Hazard Zone at Mouse</button>
+  </div>
+
+  <canvas id="canvas" width="560" height="340"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/weapons-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

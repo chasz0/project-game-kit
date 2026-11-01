@@ -18,13 +18,19 @@ export { WaveSpawner } from './gameplay/spawner.js';
 export { Progression } from './gameplay/progression.js';
 export { LootTable } from './gameplay/loot.js';
 export { Inventory } from './gameplay/inventory.js';
+export { StatusEffectManager } from './gameplay/statusEffects.js';
+export { WeaponSystem } from './gameplay/weapons.js';
 
 export { steering } from './ai/steering.js';
 export { FlowField } from './ai/flowField.js';
 export { lineOfSight } from './ai/lineOfSight.js';
+export { SwarmDirector } from './ai/director.js';
 
 export { Tilemap } from './world/tilemap.js';
+export { TilemapRenderer } from './world/tilemapRenderer.js';
 export { procgen } from './world/procgen.js';
 
 export { ParticleSystem } from './ui/particles.js';
 export { FloatingTextSystem } from './ui/floatingText.js';
+export { DevConsole } from './ui/devConsole.js';
+export { DialogueSystem } from './ui/dialogue.js';

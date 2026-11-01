@@ -1,4 +1,5 @@
 import { FlowField } from '@ai/flowField.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -47,10 +48,9 @@ document.querySelectorAll('#toolBar button[data-tool]').forEach((btn) => {
   });
 });
 
-const handlePointer = (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+const handlePointer = () => {
+  const mx = input.mouse.x;
+  const my = input.mouse.y;
 
   if (activeTool !== 'goal' && !mouseDown) {
     target.x = mx;

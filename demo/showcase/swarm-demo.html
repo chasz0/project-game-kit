@@ -2,223 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Swarm Survival — 20-Module Showcase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>32-Module Swarm Survival Showcase — GameKit</title>
   <link rel="stylesheet" href="/demo/module-docs.css">
-  <style>
-    body {
-      padding: 1rem 1.5rem 4rem;
-      user-select: none;
-    }
-    .container {
-      max-width: 1220px;
-      margin: 0 auto;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .topbar a {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .controls-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-    }
-    input[type="text"] {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.4rem 0.65rem;
-      border-radius: 4px;
-      font-family: monospace;
-      width: 130px;
-    }
-    button {
-      background: var(--panel);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.75rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.82rem;
-    }
-    button:hover { border-color: var(--accent); color: var(--accent); }
-    button.primary {
-      background: var(--accent);
-      color: #080b12;
-      border-color: var(--accent);
-      font-weight: 700;
-    }
-    .workspace {
-      display: grid;
-      grid-template-columns: 800px 1fr;
-      gap: 1rem;
-      align-items: start;
-      margin-bottom: 3rem;
-    }
-    .stage-wrap {
-      position: relative;
-      width: 800px;
-      height: 540px;
-      border: 1px solid var(--border);
-      background: #080b12;
-      overflow: hidden;
-      border-radius: 6px;
-    }
-    canvas {
-      display: block;
-      cursor: crosshair;
-    }
-    .overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(8, 11, 18, 0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 1.75rem;
-      text-align: center;
-      backdrop-filter: blur(4px);
-    }
-    .overlay.hidden { display: none; }
-    .overlay h2 { font-size: 1.75rem; margin-bottom: 0.35rem; color: var(--accent); }
-    .overlay p { color: var(--muted); margin-bottom: 1rem; max-width: 520px; font-size: 0.9rem; }
-    .upgrade-grid {
-      display: flex;
-      gap: 0.85rem;
-      margin-top: 0.5rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .upgrade-btn {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      padding: 1rem;
-      border-radius: 8px;
-      width: 210px;
-      text-align: left;
-      transition: transform 0.12s, border-color 0.12s;
-    }
-    .upgrade-btn:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
-    .upgrade-btn .tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-family: monospace;
-      color: var(--amber);
-      margin-bottom: 0.3rem;
-      text-transform: uppercase;
-    }
-    .upgrade-btn h4 { color: var(--accent); margin-bottom: 0.35rem; font-size: 0.98rem; }
-    .upgrade-btn span { font-size: 0.82rem; color: var(--muted); display: block; line-height: 1.4; }
-    .char-sheet {
-      width: 100%;
-      max-width: 700px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      text-align: left;
-      margin-bottom: 1.25rem;
-    }
-    .sheet-box {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.9rem 1rem;
-    }
-    .sheet-box h3 {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--accent);
-      margin-bottom: 0.6rem;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 0.35rem;
-    }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.83rem;
-      padding: 0.2rem 0;
-      font-family: monospace;
-    }
-    .stat-row span:first-child { color: var(--muted); }
-    .buff-list {
-      max-height: 175px;
-      overflow-y: auto;
-      padding-right: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-    .buff-item {
-      background: var(--panel-alt);
-      border-left: 3px solid var(--accent);
-      padding: 0.35rem 0.6rem;
-      font-size: 0.8rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .buff-item.temp { border-left-color: var(--amber); }
-    .buff-item small { color: var(--muted); font-family: monospace; }
-    .telemetry {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.95rem;
-      font-family: monospace;
-      font-size: 0.77rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-    }
-    .hint {
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .docs-section {
-      border-top: 1px solid var(--border);
-      padding-top: 2.5rem;
-      margin-top: 2rem;
-      user-select: text;
-    }
-    .docs-header { margin-bottom: 1.5rem; }
-    .docs-header h2 { font-size: 1.5rem; color: var(--accent); margin-bottom: 0.35rem; }
-    .docs-header p { color: var(--muted); font-size: 0.92rem; }
-    @media (max-width: 1120px) {
-      .workspace { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body class="gk-doc-page">
-  <div class="container">
+<body>
+  <header class="gk-topbar">
+    <div class="gk-topbar-inner">
+      <a href="/" class="gk-brand">GameKit <span>v0.2.0</span></a>
+      <nav class="gk-pill-nav">
+        <a href="/">Modules (32)</a>
+        <a href="/demo/showcase/swarm-demo.html" class="active">32-Module Swarm Showcase</a>
+        <a href="/about.html">About Me</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container gk-fade-in">
     <div class="topbar">
-      <div>
-        <a href="/">← Back to Hub</a>
-        <strong style="margin-left: 0.75rem; color: var(--accent);">Swarm Survival (All 20 Modules Active)</strong>
+      <div class="controls-bar">
+        <input type="text" id="seedInput" value="sector-39" title="PRNG Run Seed">
+        <button id="replaySeedBtn" class="primary">Replay Seed</button>
+        <button id="randomSeedBtn">Random Seed</button>
+        <button id="aiModeBtn">AI: DIRECTOR+SLOTS (B)</button>
+        <button id="weaponModeBtn">Gun: LINEAR (Q)</button>
+        <button id="elementModeBtn">Ammo: BURN (R)</button>
+        <button id="shrineBtn">Shrine (H)</button>
+        <button id="pauseBtn">Char Sheet (Tab)</button>
       </div>
       <div class="controls-bar">
-        <label for="seedInput" style="font-size:0.82rem; color:var(--muted);">Seed:</label>
-        <input type="text" id="seedInput" value="miku-39" />
-        <button id="replaySeedBtn" class="primary">Restart Seed</button>
-        <button id="randomSeedBtn">New Seed</button>
-        <button id="regenMapBtn">Regen Map (G)</button>
-        <button id="visionBtn">Sight Cone (C): OFF</button>
-        <button id="flowBtn">Flow Arrows (V): OFF</button>
-        <button id="pauseBtn">Character (Tab)</button>
+        <button id="regenMapBtn">Biome: ARENA (G)</button>
+        <button id="chunkBtn">Chunks (X): OFF</button>
+        <button id="visionBtn">Sight (C): OFF</button>
+        <button id="flowBtn">Flow (V): OFF</button>
+        <button id="consoleBtn">Console (~)</button>
+        <button id="muteBtn">Audio (M): ON</button>
       </div>
     </div>
 
@@ -229,24 +48,25 @@
           <div id="overlay" class="overlay hidden"></div>
         </div>
         <p class="hint">
-          <strong>Move:</strong> WASD &nbsp;|&nbsp;
-          <strong>Dash (2 Charges):</strong> Shift &nbsp;|&nbsp;
-          <strong>Shockwave Skill:</strong> Right-Click / F &nbsp;|&nbsp;
-          <strong>Use Inventory Items:</strong> [1] Medkit &nbsp;[2] Time Bomb &nbsp;[3] Speed Boost &nbsp;|&nbsp;
-          <strong>Pause:</strong> Tab / P
+          <strong>Controls:</strong> Move <code>WASD</code> &bull; Aim <code>Mouse</code> &bull;
+          Dash <code>Shift</code> &bull; Shockwave <code>F / Right-Click</code> &bull;
+          Cryo Zone <code>E</code> &bull; Gun Mode <code>Q</code> &bull; Ammo Element <code>R</code> &bull;
+          Belt Items <code>1 / 2 / 3</code> &bull; Corrupt Shrine <code>H</code> &bull;
+          Biome <code>G</code> &bull; Chunks <code>X</code> &bull; Sight <code>C</code> &bull;
+          Flow <code>V</code> &bull; Console <code>~</code> &bull; Sheet <code>Tab / P</code>
         </p>
       </div>
 
-      <div class="telemetry" id="telemetry">Initializing 20 modules...</div>
+      <pre id="telemetry" class="telemetry">Initializing 32-module telemetry...</pre>
     </div>
 
-    <!-- 20-MODULE IMPLEMENTATION BREAKDOWN -->
     <section class="docs-section">
       <div class="docs-header">
-        <h2>How All 20 Modules Are Implemented in This Game</h2>
-        <p>Every snippet below is mounted in the reusable <code>CodeEditor</code> component. You can edit values and click <strong>Run Code</strong> to test how each module operates inside Swarm Survival.</p>
+        <h2>Interactive Architecture &amp; Live Module Runners (32 Modules)</h2>
+        <p>Each card below documents how the showcase integrates the toolkit modules and runs live against the GameKit exports.</p>
       </div>
-      <div class="gk-examples-grid" id="showcase-docs-mount"></div>
+
+      <div id="showcase-docs-mount" class="showcase-docs-stack"></div>
     </section>
   </div>
 

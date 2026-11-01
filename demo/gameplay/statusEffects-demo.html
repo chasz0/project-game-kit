@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Status Effects &amp; Crowd Control Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Status Effects &amp; Crowd Control Demo (Player &amp; Swarm)</h3>
+
+  <div>
+    <button id="btnBurn">Swarm: Apply Burn (Stacking DoT)</button>
+    <button id="btnChill">Swarm: Apply Chill (-25% Speed/Stack)</button>
+    <button id="btnFreeze">Swarm: Apply Freeze (1.8s Stun)</button>
+    <button id="btnPlayerBuff">Player: Overcharge (+50% Speed &amp; Regen)</button>
+    <button id="btnPlayerDebuff">Player: Hit by Enemy Web (Root + Poison)</button>
+    <button id="btnCleanse">Cleanse All</button>
+  </div>
+
+  <canvas id="canvas" width="560" height="320" style="margin-top:0.5rem;"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/statusEffects-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Swarm Director &amp; Surround Slots Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .ctrl-bar { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.5rem; align-items: center; }
+    .ctrl-bar button.active {
+      background: var(--accent);
+      color: #080b12;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Swarm Director (Intensity Pacing &amp; 360&deg; Surround Slots)</h3>
+
+  <div class="ctrl-bar">
+    <button id="btnToggleSlots" class="active">Surround Slots: ON (Encircle)</button>
+    <button id="btnShowRings" class="active">Show Slot Rings: ON</button>
+    <button id="btnForcePeak">Trigger Peak Surge</button>
+    <button id="btnClearMobs">Wipe Swarm (Simulate AoE Clear)</button>
+  </div>
+
+  <canvas id="canvas" width="560" height="340"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/director-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

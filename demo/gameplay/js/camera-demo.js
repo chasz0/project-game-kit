@@ -1,4 +1,5 @@
 import { Camera } from '@gameplay/camera.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -19,10 +20,9 @@ document.getElementById('zoomOutBtn').addEventListener('click', () => {
   cam.setZoom(cam.zoom - 0.25);
 });
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouseScreen.x = e.clientX - rect.left;
-  mouseScreen.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  mouseScreen.x = input.mouse.x;
+  mouseScreen.y = input.mouse.y;
 });
 
 let lastTime = performance.now();

@@ -3,343 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameKit — Modular 2D Game Engine Toolkit</title>
+  <title>GameKit — Modular 2D Web Game Toolkit</title>
   <link rel="stylesheet" href="/demo/module-docs.css">
-  <style>
-    .showcase-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.75rem 2rem;
-      margin-bottom: 2.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1.5rem;
-    }
-    .showcase-info { max-width: 680px; }
-    .badge {
-      display: inline-block;
-      font-size: 0.74rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--accent);
-      background: var(--panel-alt);
-      border: 1px solid var(--border);
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
-      margin-bottom: 0.65rem;
-    }
-    .showcase-info h1 { font-size: 1.65rem; color: var(--accent); margin: 0 0 0.5rem; }
-    .showcase-info p { color: var(--muted); margin: 0 0 1rem; font-size: 0.92rem; }
-    .module-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .module-pills code {
-      font-size: 0.75rem;
-      background: #080b12;
-      color: var(--text);
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      border: 1px solid var(--border-subtle);
-    }
-    .btn-launch {
-      background: var(--accent);
-      color: #080b12;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 0.8rem 1.45rem;
-      border-radius: 6px;
-      font-size: 0.92rem;
-      white-space: nowrap;
-    }
-    .btn-launch:hover { opacity: 0.9; }
-    .tier-section { margin-bottom: 2.5rem; }
-    .tier-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .tier-header h2 { font-size: 1.2rem; color: var(--accent); margin: 0; }
-    .tier-header span { font-family: monospace; color: var(--muted); font-size: 0.82rem; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 1rem;
-    }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: border-color 0.15s;
-    }
-    .card:hover, .card.selected { border-color: var(--accent); }
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.4rem;
-    }
-    .card-title { font-weight: 700; font-size: 1.05rem; color: var(--accent); }
-    .card-path { font-family: monospace; font-size: 0.78rem; color: var(--muted); }
-    .card p { font-size: 0.87rem; color: var(--muted); margin: 0 0 0.85rem; }
-    .card-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 0.75rem;
-    }
-    .btn-inspect {
-      background: var(--panel-alt);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-    .btn-inspect:hover { border-color: var(--accent); color: var(--accent); }
-    .link-page {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-    .link-page:hover { text-decoration: underline; }
-    .inspector-section {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.75rem;
-      margin-bottom: 3rem;
-      scroll-margin-top: 75px;
-    }
-    .inspector-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-    .tab-btn {
-      background: #080b12;
-      color: var(--muted);
-      border: 1px solid var(--border-subtle);
-      padding: 0.4rem 0.8rem;
-      border-radius: 5px;
-      font-family: monospace;
-      font-size: 0.82rem;
-      cursor: pointer;
-    }
-    .tab-btn:hover { color: var(--text); border-color: var(--border); }
-    .tab-btn.active {
-      background: var(--accent);
-      color: #080b12;
-      border-color: var(--accent);
-      font-weight: 700;
-    }
-    .inspector-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-    }
-    .inspector-head h2 { font-size: 1.45rem; margin: 0 0 0.3rem; color: var(--accent); }
-    .inspector-head p { color: var(--muted); margin: 0; max-width: 720px; font-size: 0.9rem; }
-  </style>
 </head>
 <body class="gk-doc-page">
   <header class="gk-topbar">
     <div class="gk-topbar-inner">
       <a href="/" class="gk-brand">GameKit <span>v0.2.0</span></a>
       <nav class="gk-pill-nav">
-        <a href="/" class="active">Modules</a>
-        <a href="#live-inspector">Live Code Workbench</a>
-        <a href="/demo/showcase/swarm-demo.html">12-Module Swarm Game</a>
+        <a href="/" class="active">Modules (32)</a>
+        <a href="/demo/showcase/swarm-demo.html">32-Module Swarm Showcase</a>
         <a href="/about.html">About Me</a>
       </nav>
     </div>
   </header>
 
-  <main class="gk-container">
-    <section class="showcase-card">
-      <div class="showcase-info">
-        <span class="badge">12-Module Integration Showcase</span>
-        <h1>Swarm Survival — Replayable Arena Demo</h1>
-        <p>
-          Full arena survival game built strictly with the 12 Core and Gameplay modules. Features spatial-hashed swarm separation,
-          object-pooled projectiles and floating combat text, temporary ground buffs, pause character inspector, and live map regeneration.
-        </p>
-        <div class="module-pills">
-          <code>Vec2</code><code>EventEmitter</code><code>GameLoop</code><code>InputManager</code>
-          <code>TimerManager</code><code>Random</code><code>Pool</code><code>SpatialHash</code>
-          <code>collision</code><code>Stats</code><code>StateMachine</code><code>Camera</code>
-        </div>
+  <main class="gk-container gk-fade-in">
+    <section class="gk-showcase-banner">
+      <div class="gk-showcase-banner-text">
+        <span class="gk-badge-amber">Full Integration Demo</span>
+        <h1>32-Module Swarm Survival Showcase</h1>
+        <p>Playable top-down arena combining all 32 Core, Gameplay, AI, World, and UI modules in a single 60Hz loop.</p>
       </div>
-      <a href="/demo/showcase/swarm-demo.html" class="btn-launch">Play Swarm Demo →</a>
+      <div class="gk-showcase-banner-actions">
+        <a href="/demo/showcase/swarm-demo.html" class="gk-cta-btn">Launch Swarm Showcase →</a>
+      </div>
     </section>
 
-    <section class="tier-section">
-      <div class="tier-header">
-        <h2>Tier 1: Core Foundations</h2>
-        <span>core/</span>
+    <section class="gk-hub-controls">
+      <div class="gk-filter-pills" id="categoryPills">
+        <button type="button" class="active" data-cat="all">All <span>32</span></button>
+        <button type="button" data-cat="core">Core <span>8</span></button>
+        <button type="button" data-cat="gameplay">Gameplay <span>13</span></button>
+        <button type="button" data-cat="ai">AI <span>4</span></button>
+        <button type="button" data-cat="world">World <span>3</span></button>
+        <button type="button" data-cat="ui">UI <span>4</span></button>
       </div>
-      <div class="grid" id="core-grid"></div>
+      <input type="search" id="moduleSearch" class="gk-search-input" placeholder="Filter modules by name or description..." autocomplete="off">
     </section>
 
-    <section class="tier-section">
-      <div class="tier-header">
-        <h2>Tier 2: Gameplay Systems</h2>
-        <span>gameplay/</span>
-      </div>
-      <div class="grid" id="gameplay-grid"></div>
-    </section>
-
-    <section class="tier-section">
-      <div class="tier-header">
-        <h2>Tier 3: AI &amp; Navigation Systems</h2>
-        <span>ai/</span>
-      </div>
-      <div class="grid" id="ai-grid"></div>
-    </section>
-
-    <section class="tier-section">
-      <div class="tier-header">
-        <h2>Tier 4: World &amp; Procedural Maps</h2>
-        <span>world/</span>
-      </div>
-      <div class="grid" id="world-grid"></div>
-    </section>
-
-    <section class="tier-section">
-      <div class="tier-header">
-        <h2>Tier 5: UI &amp; Visual Feedback</h2>
-        <span>ui/</span>
-      </div>
-      <div class="grid" id="ui-grid"></div>
-    </section>
-
-    <section class="inspector-section" id="live-inspector">
-      <div class="tier-header" style="margin-bottom:1rem;">
-        <h2>Live Editable Code Workbench (3 Sandboxes per Module)</h2>
-        <span>Edit any snippet below and click Run Code (or press Ctrl+Enter)</span>
-      </div>
-      <div class="inspector-tabs" id="inspector-tabs"></div>
-      <div id="inspector-body"></div>
-    </section>
+    <div id="moduleListMount" class="gk-module-groups"></div>
   </main>
 
   <script type="module">
-    import { MODULE_DOCS, mountModuleEditors } from '/demo/module-docs.js';
+    import { MODULE_CATALOG, CATEGORY_META, downloadModuleFile } from '/demo/module-docs.js';
 
-    const coreGrid = document.getElementById('core-grid');
-    const gameplayGrid = document.getElementById('gameplay-grid');
-    const worldGrid = document.getElementById('world-grid');
-    const aiGrid = document.getElementById('ai-grid');
-    const uiGrid = document.getElementById('ui-grid');
-    const tabsEl = document.getElementById('inspector-tabs');
-    const bodyEl = document.getElementById('inspector-body');
+    const mount = document.getElementById('moduleListMount');
+    const searchInput = document.getElementById('moduleSearch');
+    const pills = document.querySelectorAll('#categoryPills button');
+    let activeCategory = 'all';
 
-    const renderCard = (mod) => `
-      <div class="card" data-card-id="${mod.id}">
-        <div>
-          <div class="card-top">
-            <span class="card-title">${mod.name}</span>
-            <span class="card-path">${mod.file}</span>
+    function renderList() {
+      const query = searchInput.value.trim().toLowerCase();
+      mount.innerHTML = '';
+
+      const categories = ['core', 'gameplay', 'ai', 'world', 'ui'];
+      let totalShown = 0;
+
+      for (const cat of categories) {
+        if (activeCategory !== 'all' && activeCategory !== cat) continue;
+
+        const items = MODULE_CATALOG.filter((m) => {
+          if (m.category !== cat) return false;
+          if (!query) return true;
+          return (
+            m.title.toLowerCase().includes(query) ||
+            m.exportName.toLowerCase().includes(query) ||
+            m.file.toLowerCase().includes(query) ||
+            m.summary.toLowerCase().includes(query)
+          );
+        });
+
+        if (items.length === 0) continue;
+        totalShown += items.length;
+
+        const meta = CATEGORY_META[cat];
+        const group = document.createElement('section');
+        group.className = 'gk-list-group';
+        group.innerHTML = `
+          <div class="gk-list-group-head">
+            <div class="gk-list-group-title">
+              <h2>${meta.label}</h2>
+              <span class="gk-list-count">${items.length}</span>
+            </div>
+            <p>${meta.tagline}</p>
           </div>
-          <p>${mod.summary}</p>
-          <pre class="gk-code-block" style="margin-bottom:0.75rem; padding:0.5rem 0.65rem; font-size:0.75rem;"><code>${mod.importCode}</code></pre>
-        </div>
-        <div class="card-actions">
-          <button class="btn-inspect" data-select="${mod.id}">Edit &amp; Run 3 Examples ↓</button>
-          <a href="${mod.demoUrl}" class="link-page">Open Demo Page →</a>
-        </div>
-      </div>
-    `;
-
-    coreGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 1')).map(renderCard).join('');
-    gameplayGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 2')).map(renderCard).join('');
-    aiGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 3')).map(renderCard).join('');
-    worldGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 4')).map(renderCard).join('');
-    uiGrid.innerHTML = MODULE_DOCS.filter((m) => m.tier.includes('Tier 5')).map(renderCard).join('');
-
-    tabsEl.innerHTML = MODULE_DOCS.map((m) => `
-      <button class="tab-btn" data-tab="${m.id}">${m.name}</button>
-    `).join('');
-
-    function selectModule(id, scroll = false) {
-      const mod = MODULE_DOCS.find((m) => m.id === id) || MODULE_DOCS[0];
-
-      document.querySelectorAll('.tab-btn').forEach((b) => {
-        b.classList.toggle('active', b.dataset.tab === mod.id);
-      });
-      document.querySelectorAll('.card').forEach((c) => {
-        c.classList.toggle('selected', c.dataset.cardId === mod.id);
-      });
-
-      bodyEl.innerHTML = `
-        <div class="inspector-head">
-          <div>
-            <h2>${mod.name} <small style="font-size:0.85rem; color:var(--muted); font-family:monospace;">(${mod.file})</small></h2>
-            <p>${mod.summary}</p>
+          <div class="gk-list-rows">
+            ${items.map((m) => {
+              const filename = m.file.split('/').pop();
+              return `
+                <a href="${m.demoPath}" class="gk-list-row">
+                  <div class="gk-list-row-left">
+                    <span class="gk-list-name">${m.title}</span>
+                    <code class="gk-list-path">${m.file}</code>
+                  </div>
+                  <p class="gk-list-desc">${m.summary}</p>
+                  <div class="gk-list-row-actions">
+                    <button type="button" class="gk-download-btn" data-download="${m.file}" title="Download ${m.file}">
+                      ↓ ${filename}
+                    </button>
+                    <span class="gk-list-arrow" aria-hidden="true">→</span>
+                  </div>
+                </a>
+              `;
+            }).join('')}
           </div>
-          <a href="${mod.demoUrl}" class="btn-launch" style="padding:0.55rem 1.05rem; font-size:0.84rem;">
-            Open Dedicated ${mod.name} Demo →
-          </a>
-        </div>
+        `;
+        mount.appendChild(group);
+      }
 
-        <div class="gk-box" style="margin-bottom:1.5rem;">
-          <h3>Import &amp; Public API Reference</h3>
-          <pre class="gk-code-block" style="margin-bottom:0.85rem;"><code>${mod.importCode}</code></pre>
-          <table class="gk-api-table">
-            <thead>
-              <tr><th>Method / Property</th><th>Usage &amp; Behavior</th></tr>
-            </thead>
-            <tbody>
-              ${mod.api.map((row) => `
-                <tr>
-                  <td><code>${row.sig}</code></td>
-                  <td>${row.desc}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+      mount.querySelectorAll('[data-download]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          downloadModuleFile(btn.dataset.download);
+        });
+      });
 
-        <h3 style="color:var(--accent); margin:0 0 0.85rem; font-size:1.05rem;">
-          3 Editable Code Examples for <code>${mod.name}</code>
-        </h3>
-        <div id="workbench-editors"></div>
-      `;
-
-      mountModuleEditors(document.getElementById('workbench-editors'), mod);
-
-      if (scroll) {
-        document.getElementById('live-inspector').scrollIntoView({ behavior: 'smooth' });
+      if (totalShown === 0) {
+        mount.innerHTML = `<div class="gk-empty-state">No modules match "${searchInput.value}".</div>`;
       }
     }
 
-    document.querySelectorAll('[data-select]').forEach((btn) => {
-      btn.addEventListener('click', () => selectModule(btn.dataset.select, true));
+    pills.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeCategory = btn.dataset.cat;
+        pills.forEach((b) => b.classList.toggle('active', b === btn));
+        renderList();
+      });
     });
 
-    tabsEl.querySelectorAll('.tab-btn').forEach((btn) => {
-      btn.addEventListener('click', () => selectModule(btn.dataset.tab, false));
-    });
-
-    selectModule('vec2', false);
+    searchInput.addEventListener('input', renderList);
+    renderList();
   </script>
 </body>
 </html>

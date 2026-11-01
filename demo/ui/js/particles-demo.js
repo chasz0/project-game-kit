@@ -1,4 +1,5 @@
 import { ParticleSystem } from '@ui/particles.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -7,10 +8,9 @@ const out = document.getElementById('output');
 const fx = new ParticleSystem({ maxParticles: 1200, preallocate: 250 });
 const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  mouse.x = input.mouse.x;
+  mouse.y = input.mouse.y;
 });
 
 canvas.addEventListener('mousedown', () => {

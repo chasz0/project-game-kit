@@ -1,4 +1,5 @@
 import { Tilemap } from '@world/tilemap.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -41,8 +42,7 @@ window.addEventListener('keydown', (e) => { keys[e.code] = true; });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
 const handlePaint = (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const cell = map.worldToTile(e.clientX - rect.left, e.clientY - rect.top);
+  const cell = map.worldToTile(input.mouse.x, input.mouse.y);
   if (e.type === 'mousedown') {
     paintId = map.isSolid(cell.col, cell.row) ? 0 : 1;
   }

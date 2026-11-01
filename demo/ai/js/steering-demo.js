@@ -1,4 +1,5 @@
 import { steering } from '@ai/steering.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -26,10 +27,9 @@ const agents = Array.from({ length: 160 }, () => ({
   lastFy: 0
 }));
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  target.x = e.clientX - rect.left;
-  target.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  target.x = input.mouse.x;
+  target.y = input.mouse.y;
 });
 
 document.querySelectorAll('#modeBar button').forEach((btn) => {

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dialogue &amp; Tactical Comms Demo</title>
+  <link rel="stylesheet" href="/demo/module-docs.css">
+  <style>
+    .dlg-box {
+      background: #090d15;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      min-height: 120px;
+    }
+    .dlg-speaker {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--amber);
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .dlg-text {
+      color: var(--accent);
+      font-size: 0.95rem;
+      min-height: 2.2rem;
+      margin-bottom: 0.75rem;
+    }
+    .dlg-choices {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <a href="/">← Back to Hub</a>
+  <h3>Branching Dialogue &amp; Non-Blocking Tactical Bark Demo</h3>
+
+  <div>
+    <button id="btnStartShrine">Open Corrupt Shrine Dialogue</button>
+    <button id="btnAdvance">Advance / Skip Typewriter (Space)</button>
+    <button id="btnBarkSurge">Queue Radio Bark: Swarm Surge</button>
+    <button id="btnBarkBoss">Queue Boss Bark: Dreadnought</button>
+  </div>
+
+  <div class="dlg-box" id="dlgBox">
+    <div class="dlg-speaker" id="dlgSpeaker">IDLE</div>
+    <div class="dlg-text" id="dlgText">Click "Open Corrupt Shrine Dialogue" above to test branching choices and stat conditions.</div>
+    <div class="dlg-choices" id="dlgChoices"></div>
+  </div>
+
+  <canvas id="canvas" width="560" height="140"></canvas>
+  <pre id="output"></pre>
+  <script type="module" src="./js/dialogue-demo.js"></script>
+  <script type="module" src="/demo/module-docs.js"></script>
+</body>
+</html>

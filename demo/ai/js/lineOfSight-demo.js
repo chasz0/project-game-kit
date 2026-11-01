@@ -1,4 +1,5 @@
 import { lineOfSight } from '@ai/lineOfSight.js';
+import { input } from '@core/input.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -39,18 +40,16 @@ const enemies = Array.from({ length: 7 }, (_, i) => ({
 window.addEventListener('keydown', (e) => { keys[e.code] = true; });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  player.x = e.clientX - rect.left;
-  player.y = e.clientY - rect.top;
+canvas.addEventListener('mousedown', () => {
+  player.x = input.mouse.x;
+  player.y = input.mouse.y;
   draggingPlayer = true;
 });
 window.addEventListener('mouseup', () => { draggingPlayer = false; });
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+canvas.addEventListener('mousemove', () => {
+  mouse.x = input.mouse.x;
+  mouse.y = input.mouse.y;
   if (draggingPlayer) {
     player.x = mouse.x;
     player.y = mouse.y;
