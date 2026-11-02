@@ -1,11 +1,3 @@
-// Adaptive swarm pacing director (Build-Up / Peak / Breather phases)
-// and 360-degree Surround Slot Coordinator to prevent enemy conga-lining.
-//
-//   const director = new SwarmDirector({ rng: () => rng.next() });
-//   director.registerEnemy('dart', { cost: 1, weight: 5 }).registerEnemy('tank', { cost: 5, weight: 1, elite: true });
-//   director.update(dt, { playerX: player.x, playerY: player.y, activeCount: enemies.length, onSpawn });
-//   const slotTarget = director.assignSlot(enemy, player.x, player.y, scratchVec);
-
 export class SwarmDirector {
   constructor({
     rng = Math.random,
@@ -40,12 +32,18 @@ export class SwarmDirector {
     this.intensity = 0;
     this.damageStress = 0;
     this.totalSpawned = 0;
+    this._tickId = 1;
+    this._agentSlots = new WeakMap();
 
-    this.rings = rings.map((r) => ({
-      radius: r.radius,
-      slots: Math.max(4, Math.floor(r.slots)),
-      occupied: new Uint8Array(Math.max(4, Math.floor(r.slots)))
-    }));
+    this.rings = rings.map((r) => {
+      const count = Math.max(4, Math.floor(r.slots));
+      return {
+        radius: r.radius,
+        slots: count,
+        occupied: new Uint8Array(count),
+        owners: new Array(count).fill(null)
+      };
+    });
   }
 
   registerEnemy(id, { cost = 1, weight = 1, minWave = 1, elite = false } = {}) {
@@ -68,20 +66,53 @@ export class SwarmDirector {
     this.damageStress = Math.max(0, this.damageStress - 0.012);
   }
 
+  releaseSlot(agent) {
+    const prev = this._agentSlots.get(agent);
+    if (!prev) return;
+    const ring = this.rings[prev.ringIndex];
+    if (ring && ring.owners[prev.slotIndex] === agent) {
+      ring.owners[prev.slotIndex] = null;
+      ring.occupied[prev.slotIndex] = 0;
+    }
+    this._agentSlots.delete(agent);
+  }
+
   clearSlots() {
     for (let i = 0; i < this.rings.length; i++) {
       this.rings[i].occupied.fill(0);
+      this.rings[i].owners.fill(null);
+    }
+    this._agentSlots = new WeakMap();
+  }
+
+  _pruneStaleSlots() {
+    const minTick = this._tickId - 1;
+    for (let rIdx = 0; rIdx < this.rings.length; rIdx++) {
+      const ring = this.rings[rIdx];
+      for (let s = 0; s < ring.slots; s++) {
+        const owner = ring.owners[s];
+        if (!owner) {
+          ring.occupied[s] = 0;
+          continue;
+        }
+        const meta = this._agentSlots.get(owner);
+        if (!meta || meta.lastTick < minTick) {
+          ring.owners[s] = null;
+          ring.occupied[s] = 0;
+        } else {
+          ring.occupied[s] = 1;
+        }
+      }
     }
   }
 
-  // Assigns the closest available angular surround slot around (targetX, targetY).
   assignSlot(agent, targetX, targetY, out = { x: 0, y: 0, ringIndex: 0, slotIndex: 0 }) {
     const dx = agent.x - targetX;
     const dy = agent.y - targetY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // Once inside the inner ring radius, close directly onto the target
     if (this.rings.length === 0 || dist < this.rings[0].radius * 0.75) {
+      this.releaseSlot(agent);
       out.x = targetX;
       out.y = targetY;
       out.ringIndex = 0;
@@ -92,19 +123,49 @@ export class SwarmDirector {
     const angle = Math.atan2(dy, dx);
     const normAngle = angle < 0 ? angle + Math.PI * 2 : angle;
 
+    const prev = this._agentSlots.get(agent);
+    if (prev) {
+      const ring = this.rings[prev.ringIndex];
+      if (ring && ring.owners[prev.slotIndex] === agent) {
+        const count = ring.slots;
+        const step = (Math.PI * 2) / count;
+        const baseIdx = Math.round(normAngle / step) % count;
+        const diff = Math.abs(baseIdx - prev.slotIndex);
+        const angularDiff = Math.min(diff, count - diff);
+        if (angularDiff <= 1) {
+          prev.lastTick = this._tickId;
+          ring.occupied[prev.slotIndex] = 1;
+          const slotAngle = prev.slotIndex * step;
+          out.x = targetX + Math.cos(slotAngle) * ring.radius;
+          out.y = targetY + Math.sin(slotAngle) * ring.radius;
+          out.ringIndex = prev.ringIndex;
+          out.slotIndex = prev.slotIndex;
+          return out;
+        }
+      }
+      this.releaseSlot(agent);
+    }
+
     for (let rIdx = 0; rIdx < this.rings.length; rIdx++) {
       const ring = this.rings[rIdx];
       const count = ring.slots;
       const step = (Math.PI * 2) / count;
       const baseIdx = Math.round(normAngle / step) % count;
-
       const maxOffset = Math.floor(count / 2);
+
       for (let offset = 0; offset <= maxOffset; offset++) {
-        const candidates = offset === 0 ? [0] : [offset, -offset];
-        for (let c = 0; c < candidates.length; c++) {
-          const slotIdx = (baseIdx + candidates[c] + count) % count;
+        const passes = offset === 0 ? 1 : 2;
+        for (let p = 0; p < passes; p++) {
+          const delta = p === 0 ? offset : -offset;
+          const slotIdx = (baseIdx + delta + count) % count;
           if (ring.occupied[slotIdx] === 0) {
             ring.occupied[slotIdx] = 1;
+            ring.owners[slotIdx] = agent;
+            this._agentSlots.set(agent, {
+              ringIndex: rIdx,
+              slotIndex: slotIdx,
+              lastTick: this._tickId
+            });
             const slotAngle = slotIdx * step;
             out.x = targetX + Math.cos(slotAngle) * ring.radius;
             out.y = targetY + Math.sin(slotAngle) * ring.radius;
@@ -131,7 +192,8 @@ export class SwarmDirector {
     maxRadius = 560,
     onSpawn = null
   } = {}) {
-    this.clearSlots();
+    this._tickId++;
+    this._pruneStaleSlots();
 
     const dtSec = dt / 1000;
     this.phaseTimer += dt;
@@ -145,11 +207,12 @@ export class SwarmDirector {
     this.intensity = Math.max(0, Math.min(1, crowdRatio * 0.55 + this.damageStress + timeFactor));
 
     const waveScale = 1 + (this.waveNumber - 1) * 0.18;
+    let spawnedNow = 0;
 
     if (this.phase === 'buildup') {
       this.credits += this.baseCreditRate * waveScale * dtSec;
       if (this.intensity >= this.peakThreshold || this.phaseTimer >= this.buildupDuration) {
-        this._enterPeak(playerX, playerY, activeCount, minRadius, maxRadius, onSpawn);
+        spawnedNow += this._enterPeak(playerX, playerY, activeCount, minRadius, maxRadius, onSpawn);
       }
     } else if (this.phase === 'peak') {
       this.credits += this.baseCreditRate * waveScale * 1.6 * dtSec;
@@ -166,7 +229,6 @@ export class SwarmDirector {
       }
     }
 
-    let spawnedNow = 0;
     if (this.phase !== 'breather') {
       this.spawnTimer += dt;
       const interval = this.phase === 'peak' ? this.spawnInterval * 0.55 : this.spawnInterval;
@@ -189,6 +251,7 @@ export class SwarmDirector {
     this.intensity = 0;
     this.damageStress = 0;
     this.totalSpawned = 0;
+    this._tickId = 1;
     this.clearSlots();
   }
 
@@ -196,7 +259,7 @@ export class SwarmDirector {
     this.phase = 'peak';
     this.phaseTimer = 0;
     this.credits += 6 + this.waveNumber * 2;
-    this._spendCredits(playerX, playerY, activeCount, minRadius, maxRadius, onSpawn, true);
+    return this._spendCredits(playerX, playerY, activeCount, minRadius, maxRadius, onSpawn, true);
   }
 
   _spendCredits(cx, cy, currentActive, minR, maxR, onSpawn, allowElite) {

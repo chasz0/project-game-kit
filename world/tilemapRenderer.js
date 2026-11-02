@@ -28,6 +28,7 @@ export class TilemapRenderer {
     this.chunkCols = Math.ceil(tilemap.cols / this.chunkSize);
     this.chunkRows = Math.ceil(tilemap.rows / this.chunkSize);
     this.chunkPixelSize = this.chunkSize * tilemap.tileSize;
+    this._lastMapVersion = tilemap.version ?? 0;
 
     this.chunksDrawnThisFrame = 0;
     this.chunksRebuiltThisFrame = 0;
@@ -79,6 +80,11 @@ export class TilemapRenderer {
     this.chunksRebuiltThisFrame = 0;
 
     const tm = this.tilemap;
+    if (tm.version !== undefined && tm.version !== this._lastMapVersion) {
+      this.invalidateAll();
+      this._lastMapVersion = tm.version;
+    }
+
     const cpSize = this.chunkPixelSize;
 
     const minCC = Math.max(0, Math.floor((viewX - tm.originX) / cpSize));
@@ -87,7 +93,7 @@ export class TilemapRenderer {
     const maxCR = Math.min(this.chunkRows - 1, Math.floor((viewY + viewH - tm.originY) / cpSize));
 
     for (let cr = minCR; cr <= maxCR; cr++) {
-      const worldY = tm.originY + cr * cpSize;
+      const worldY = Math.round(tm.originY + cr * cpSize);
       for (let cc = minCC; cc <= maxCC; cc++) {
         const chunk = this.chunks[cr * this.chunkCols + cc];
         if (chunk.dirty) {
@@ -96,7 +102,7 @@ export class TilemapRenderer {
           this.totalRebuilds++;
         }
         if (chunk.canvas) {
-          const worldX = tm.originX + cc * cpSize;
+          const worldX = Math.round(tm.originX + cc * cpSize);
           ctx.drawImage(chunk.canvas, worldX, worldY);
           this.chunksDrawnThisFrame++;
         }
@@ -104,6 +110,14 @@ export class TilemapRenderer {
     }
 
     return this.chunksDrawnThisFrame;
+  }
+
+  dispose() {
+    for (let i = 0; i < this.chunks.length; i++) {
+      this.chunks[i].canvas = null;
+      this.chunks[i].ctx = null;
+      this.chunks[i].dirty = true;
+    }
   }
 
   _markChunkDirty(cc, cr) {

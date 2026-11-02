@@ -19,6 +19,8 @@ export class Tilemap {
 
     this.data = new Uint8Array(this.cols * this.rows);
     this.solidIds = new Set(solidIds);
+    this._oobId = solidIds.length > 0 ? solidIds[0] : 1;
+    this.version = 0;
   }
 
   get width() {
@@ -27,6 +29,12 @@ export class Tilemap {
 
   get height() {
     return this.rows * this.tileSize;
+  }
+
+  _validateTileId(id) {
+    if (!Number.isInteger(id) || id < 0 || id > 255) {
+      throw new RangeError(`Tilemap: tile id must be an integer between 0 and 255, got ${id}`);
+    }
   }
 
   inBounds(col, row) {
@@ -38,18 +46,22 @@ export class Tilemap {
   }
 
   get(col, row) {
-    if (!this.inBounds(col, row)) return 1;
+    if (!this.inBounds(col, row)) return this._oobId;
     return this.data[row * this.cols + col];
   }
 
   set(col, row, id) {
+    this._validateTileId(id);
     if (!this.inBounds(col, row)) return false;
     this.data[row * this.cols + col] = id;
+    this.version++;
     return true;
   }
 
   fill(id = 0) {
+    this._validateTileId(id);
     this.data.fill(id);
+    this.version++;
     return this;
   }
 
@@ -58,6 +70,7 @@ export class Tilemap {
     for (let i = 0; i < len; i++) {
       this.data[i] = gridArray[i];
     }
+    this.version++;
     return this;
   }
 
@@ -85,6 +98,7 @@ export class Tilemap {
   }
 
   // Resolves circle { x, y, r } against overlapping solid tiles in O(1) time.
+  // Pass 0 resolves cardinal face overlaps; Pass 1 resolves remaining corner contacts.
   collideCircle(circle, out = { hit: false, nx: 0, ny: 0, depth: 0 }) {
     out.hit = false;
     out.nx = 0;
@@ -99,45 +113,53 @@ export class Tilemap {
 
     const ts = this.tileSize;
 
-    for (let row = minR; row <= maxR; row++) {
-      for (let col = minC; col <= maxC; col++) {
-        if (!this.isSolid(col, row)) continue;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let row = minR; row <= maxR; row++) {
+        for (let col = minC; col <= maxC; col++) {
+          if (!this.isSolid(col, row)) continue;
 
-        const bx = this.originX + col * ts;
-        const by = this.originY + row * ts;
+          const bx = this.originX + col * ts;
+          const by = this.originY + row * ts;
 
-        const closestX = circle.x < bx ? bx : (circle.x > bx + ts ? bx + ts : circle.x);
-        const closestY = circle.y < by ? by : (circle.y > by + ts ? by + ts : circle.y);
-        const dx = circle.x - closestX;
-        const dy = circle.y - closestY;
-        const distSq = dx * dx + dy * dy;
+          const closestX = circle.x < bx ? bx : (circle.x > bx + ts ? bx + ts : circle.x);
+          const closestY = circle.y < by ? by : (circle.y > by + ts ? by + ts : circle.y);
+          const dx = circle.x - closestX;
+          const dy = circle.y - closestY;
+          const isCorner = dx !== 0 && dy !== 0;
 
-        if (distSq >= r * r) continue;
+          if (pass === 0 && isCorner) continue;
+          if (pass === 1 && !isCorner) continue;
 
-        let nx = 0, ny = 0, depth = 0;
-        if (distSq > 0) {
-          const dist = Math.sqrt(distSq);
-          nx = dx / dist;
-          ny = dy / dist;
-          depth = r - dist;
-        } else {
-          const left = circle.x - bx;
-          const right = bx + ts - circle.x;
-          const top = circle.y - by;
-          const bottom = by + ts - circle.y;
-          const min = Math.min(left, right, top, bottom);
-          if (min === left) { nx = -1; depth = left + r; }
-          else if (min === right) { nx = 1; depth = right + r; }
-          else if (min === top) { ny = -1; depth = top + r; }
-          else { ny = 1; depth = bottom + r; }
+          const distSq = dx * dx + dy * dy;
+          if (distSq >= r * r) continue;
+
+          let nx = 0, ny = 0, depth = 0;
+          if (distSq > 0) {
+            const dist = Math.sqrt(distSq);
+            nx = dx / dist;
+            ny = dy / dist;
+            depth = r - dist;
+          } else {
+            const left = this.isSolid(col - 1, row) ? Infinity : circle.x - bx;
+            const right = this.isSolid(col + 1, row) ? Infinity : bx + ts - circle.x;
+            const top = this.isSolid(col, row - 1) ? Infinity : circle.y - by;
+            const bottom = this.isSolid(col, row + 1) ? Infinity : by + ts - circle.y;
+            const min = Math.min(left, right, top, bottom);
+
+            if (min === left) { nx = -1; depth = left + r; }
+            else if (min === right) { nx = 1; depth = right + r; }
+            else if (min === top) { ny = -1; depth = top + r; }
+            else if (min === bottom) { ny = 1; depth = bottom + r; }
+            else { ny = -1; depth = (circle.y - by) + r; }
+          }
+
+          circle.x += nx * depth;
+          circle.y += ny * depth;
+          out.hit = true;
+          out.nx = nx;
+          out.ny = ny;
+          out.depth = Math.max(out.depth, depth);
         }
-
-        circle.x += nx * depth;
-        circle.y += ny * depth;
-        out.hit = true;
-        out.nx = nx;
-        out.ny = ny;
-        out.depth = Math.max(out.depth, depth);
       }
     }
 

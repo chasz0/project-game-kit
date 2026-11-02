@@ -5,9 +5,13 @@
 //   audio.setVolume(0.5);
 
 export class SoundManager {
-  constructor({ masterVolume = 0.4 } = {}) {
+  constructor({ masterVolume = 0.4, maxVoices = 24 } = {}) {
     this.ctx = null;
+    this.masterGain = null;
+    this.compressor = null;
     this.masterVolume = Math.max(0, Math.min(1, masterVolume));
+    this.maxVoices = Math.max(1, maxVoices);
+    this.activeVoices = 0;
     this.muted = false;
     this.sounds = new Map();
     this.lastPlayed = new Map();
@@ -103,20 +107,24 @@ export class SoundManager {
 
   setVolume(level) {
     this.masterVolume = Math.max(0, Math.min(1, level));
+    this._syncMasterBus();
   }
 
   setMuted(muted) {
     this.muted = Boolean(muted);
+    this._syncMasterBus();
   }
 
   toggleMute() {
     this.muted = !this.muted;
+    this._syncMasterBus();
     return this.muted;
   }
 
   canPlay(id, now = performance.now()) {
     const preset = this.sounds.get(id);
     if (!preset || this.muted || this.masterVolume <= 0) return false;
+    if (this.activeVoices >= this.maxVoices) return false;
     const prev = this.lastPlayed.get(id) ?? -Infinity;
     return now - prev >= preset.throttleMs;
   }
@@ -138,12 +146,16 @@ export class SoundManager {
     const variance = 1 + (Math.random() * 2 - 1) * preset.pitchVariance;
     const startFreq = Math.max(20, preset.freq * pitchScale * variance);
     const targetFreq = Math.max(20, preset.endFreq * pitchScale * variance);
-    const gainVal = Math.max(0.0001, preset.volume * this.masterVolume * volumeScale);
+    const busScale = this.masterGain ? 1 : this.masterVolume;
+    const gainVal = Math.max(0.0001, preset.volume * busScale * volumeScale);
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(gainVal, t0);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durSec);
-    gain.connect(ctx.destination);
+    gain.connect(this.masterGain || ctx.destination);
+
+    this.activeVoices++;
+    let srcNode = null;
 
     if (preset.wave === 'noise') {
       const src = ctx.createBufferSource();
@@ -159,6 +171,7 @@ export class SoundManager {
       filter.connect(gain);
       src.start(t0);
       src.stop(t0 + durSec);
+      srcNode = src;
     } else {
       const osc = ctx.createOscillator();
       osc.type = preset.wave;
@@ -167,9 +180,36 @@ export class SoundManager {
       osc.connect(gain);
       osc.start(t0);
       osc.stop(t0 + durSec);
+      srcNode = osc;
+    }
+
+    if (srcNode && 'onended' in srcNode) {
+      srcNode.onended = () => {
+        this.activeVoices = Math.max(0, this.activeVoices - 1);
+      };
+    } else {
+      setTimeout(() => {
+        this.activeVoices = Math.max(0, this.activeVoices - 1);
+      }, preset.duration);
     }
 
     return true;
+  }
+
+  dispose() {
+    if (this.ctx && typeof this.ctx.close === 'function') {
+      this.ctx.close();
+    }
+    this.ctx = null;
+    this.masterGain = null;
+    this.compressor = null;
+    this.activeVoices = 0;
+  }
+
+  _syncMasterBus() {
+    if (!this.masterGain || !this.ctx) return;
+    const target = this.muted ? 0 : this.masterVolume;
+    this.masterGain.gain.setValueAtTime(target, this.ctx.currentTime);
   }
 
   _ensureContext() {
@@ -179,9 +219,20 @@ export class SoundManager {
 
     if (!this.ctx) {
       this.ctx = new AudioCtx();
+      if (typeof this.ctx.createGain === 'function') {
+        this.masterGain = this.ctx.createGain();
+        this._syncMasterBus();
+        if (typeof this.ctx.createDynamicsCompressor === 'function') {
+          this.compressor = this.ctx.createDynamicsCompressor();
+          this.masterGain.connect(this.compressor);
+          this.compressor.connect(this.ctx.destination);
+        } else {
+          this.masterGain.connect(this.ctx.destination);
+        }
+      }
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx.state === 'suspended' && typeof this.ctx.resume === 'function') {
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }

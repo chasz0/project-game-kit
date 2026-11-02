@@ -40,7 +40,7 @@ export class Progression {
 
   // Adds XP and returns the number of new levels gained on this call.
   addXp(amount) {
-    if (!(amount > 0)) return 0;
+    if (!(amount > 0) || !Number.isFinite(amount)) return 0;
     this.xp += amount;
     let gained = 0;
 

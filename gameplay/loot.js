@@ -13,11 +13,13 @@ export class LootTable {
 
   add(id, { weight = 1, min = 1, max = 1, guaranteed = false } = {}) {
     if (!id) throw new Error('LootTable.add: item id is required');
+    const normMin = Math.max(1, Math.floor(min));
+    const normMax = Math.max(normMin, Math.floor(max));
     this.entries.push({
       id,
       weight: Math.max(0, weight),
-      min: Math.max(1, Math.floor(min)),
-      max: Math.max(min, Math.floor(max)),
+      min: normMin,
+      max: normMax,
       guaranteed: Boolean(guaranteed)
     });
     return this;
@@ -26,30 +28,35 @@ export class LootTable {
   // Returns an array of { id, count } drops from a single roll.
   roll(rng = Math.random) {
     const results = [];
+    let totalWeight = 0;
 
     for (let i = 0; i < this.entries.length; i++) {
       const e = this.entries[i];
       if (e.guaranteed) {
         results.push({ id: e.id, count: this._rollQty(e, rng) });
+      } else if (e.weight > 0) {
+        totalWeight += e.weight;
       }
     }
 
-    if (rng() > this.dropChance) return results;
-
-    const weighted = this.entries.filter((e) => !e.guaranteed && e.weight > 0);
-    if (weighted.length === 0) return results;
-
-    let totalWeight = 0;
-    for (let i = 0; i < weighted.length; i++) totalWeight += weighted[i].weight;
+    if (totalWeight <= 0 || rng() > this.dropChance) return results;
 
     let pick = rng() * totalWeight;
-    for (let i = 0; i < weighted.length; i++) {
-      const e = weighted[i];
+    let lastWeighted = null;
+
+    for (let i = 0; i < this.entries.length; i++) {
+      const e = this.entries[i];
+      if (e.guaranteed || e.weight <= 0) continue;
+      lastWeighted = e;
       pick -= e.weight;
       if (pick <= 0) {
         results.push({ id: e.id, count: this._rollQty(e, rng) });
-        break;
+        return results;
       }
+    }
+
+    if (lastWeighted) {
+      results.push({ id: lastWeighted.id, count: this._rollQty(lastWeighted, rng) });
     }
 
     return results;

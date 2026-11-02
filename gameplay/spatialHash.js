@@ -1,17 +1,6 @@
-// Broad-phase 2D spatial index for fast neighbor and region queries.
-//
-// Supported client shapes:
-//   Circle / Point (center): { x, y, r } or { x, y }
-//   Box (top-left):          { x, y, w, h }
-//
-// Usage:
-//   const grid = new SpatialHash(64);
-//   grid.insert(enemy);
-//   grid.update(enemy);                        // no-op if still in the same cells
-//   const hits = grid.queryRadius(x, y, 80, reusableArray);
-
 const OFFSET = 32768;
 const STRIDE = 65536;
+const MAX_CELLS_PER_CLIENT = 4096;
 
 const cellKey = (cx, cy) => (cx + OFFSET) * STRIDE + (cy + OFFSET);
 
@@ -32,6 +21,22 @@ export class SpatialHash {
     return this.cells.size;
   }
 
+  _validateBounds(minX, minY, maxX, maxY) {
+    if (
+      !Number.isFinite(minX) ||
+      !Number.isFinite(minY) ||
+      !Number.isFinite(maxX) ||
+      !Number.isFinite(maxY) ||
+      minX > maxX ||
+      minY > maxY
+    ) {
+      throw new RangeError('SpatialHash: bounds must be finite numbers');
+    }
+    if ((maxX - minX + 1) * (maxY - minY + 1) > MAX_CELLS_PER_CLIENT) {
+      throw new RangeError('SpatialHash: client spans too many cells; use a larger cellSize');
+    }
+  }
+
   insert(client) {
     if (this.bounds.has(client)) {
       return this.update(client);
@@ -41,6 +46,7 @@ export class SpatialHash {
     const minY = this._minY(client);
     const maxX = this._maxX(client);
     const maxY = this._maxY(client);
+    this._validateBounds(minX, minY, maxX, maxY);
 
     this._addToCells(client, minX, minY, maxX, maxY);
     this.bounds.set(client, { minX, minY, maxX, maxY });
@@ -58,7 +64,6 @@ export class SpatialHash {
     return true;
   }
 
-  // Returns true only when the client crossed into a different cell range.
   update(client) {
     const prev = this.bounds.get(client);
     if (!prev) return this.insert(client);
@@ -67,6 +72,7 @@ export class SpatialHash {
     const minY = this._minY(client);
     const maxX = this._maxX(client);
     const maxY = this._maxY(client);
+    this._validateBounds(minX, minY, maxX, maxY);
 
     if (
       prev.minX === minX &&
@@ -87,9 +93,11 @@ export class SpatialHash {
     return true;
   }
 
-  // Fills and returns `out` with broad-phase candidates in the top-left box (x, y, w, h).
   query(x, y, w, h, out = []) {
     out.length = 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h)) {
+      return out;
+    }
 
     const inv = this.invCellSize;
     const minX = Math.floor(x * inv);
@@ -122,7 +130,6 @@ export class SpatialHash {
     return out;
   }
 
-  // Broad-phase query around a center point (x, y) with radius r.
   queryRadius(x, y, r, out = []) {
     const d = r * 2;
     return this.query(x - r, y - r, d, d, out);

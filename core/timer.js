@@ -1,18 +1,16 @@
-// Delta-time driven delays, tweens, and repeating intervals.
-//
-//   timer.add(500, () => explode(), (progress) => setScale(progress));
-//   const spawner = timer.every(1000, () => spawnWave());
-//   timer.cancel(spawner);
-//   timer.update(dt); // call once per fixed update step (dt in ms)
-
 export class TimerManager {
   constructor() {
     this.timers = [];
+    this._due = [];
+    this._clearGen = 0;
   }
 
   add(durationMs, onComplete, onUpdate = null) {
+    if (!(durationMs >= 0) || !Number.isFinite(durationMs)) {
+      throw new RangeError('TimerManager.add: durationMs must be a finite number >= 0');
+    }
     const entry = {
-      duration: Math.max(0, durationMs),
+      duration: durationMs,
       elapsed: 0,
       onComplete,
       onUpdate,
@@ -24,8 +22,8 @@ export class TimerManager {
   }
 
   every(intervalMs, onTick) {
-    if (!(intervalMs > 0)) {
-      throw new RangeError('TimerManager.every: intervalMs must be > 0');
+    if (!(intervalMs > 0) || !Number.isFinite(intervalMs)) {
+      throw new RangeError('TimerManager.every: intervalMs must be a finite number > 0');
     }
     const entry = {
       duration: intervalMs,
@@ -40,30 +38,44 @@ export class TimerManager {
   }
 
   cancel(entry) {
-    if (entry) entry.cancelled = true;
+    if (!entry) return;
+    entry.cancelled = true;
+    const idx = this.timers.indexOf(entry);
+    if (idx !== -1) {
+      this.timers.splice(idx, 1);
+    }
   }
 
   clear() {
     this.timers.length = 0;
+    this._due.length = 0;
+    this._clearGen++;
   }
 
   update(dt) {
     const list = this.timers;
+    const due = this._due;
+    due.length = 0;
+
+    const initialLen = list.length;
+    const startGen = this._clearGen;
     let writeIdx = 0;
 
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < initialLen; i++) {
       const t = list[i];
-      if (t.cancelled) continue;
+      if (!t || t.cancelled) continue;
 
       t.elapsed += dt;
 
       if (t.onUpdate) {
         const progress = t.duration > 0 ? Math.min(t.elapsed / t.duration, 1) : 1;
         t.onUpdate(progress);
+        if (this._clearGen !== startGen) return;
+        if (t.cancelled) continue;
       }
 
       if (t.elapsed >= t.duration) {
-        if (t.onComplete) t.onComplete();
+        if (t.onComplete) due.push(t);
         if (t.repeat && !t.cancelled) {
           t.elapsed %= t.duration;
           list[writeIdx++] = t;
@@ -73,7 +85,22 @@ export class TimerManager {
       }
     }
 
+    for (let i = initialLen; i < list.length; i++) {
+      if (!list[i].cancelled) {
+        list[writeIdx++] = list[i];
+      }
+    }
+
     list.length = writeIdx;
+
+    for (let i = 0; i < due.length; i++) {
+      const t = due[i];
+      if (!t.cancelled) {
+        t.onComplete();
+        if (this._clearGen !== startGen) break;
+      }
+    }
+    due.length = 0;
   }
 }
 

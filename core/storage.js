@@ -5,6 +5,8 @@
 //   storage.set('highScore', 12400);
 //   const score = storage.get('highScore', 0);
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export class StorageManager {
   constructor({ namespace = 'gamekit' } = {}) {
     this.namespace = namespace;
@@ -41,10 +43,18 @@ export class StorageManager {
 
   // Configures a JSON file in the project root as the active backend.
   async useFile({ filename = 'gamekit-save.json', endpoint = '/__gamekit_storage' } = {}) {
+    const prevMode = this.mode;
+    const prevConfig = this.fileConfig;
     this.mode = 'file';
     this.lastError = null;
     this.fileConfig = { filename, endpoint };
-    await this.load();
+    try {
+      await this.load();
+    } catch (err) {
+      this.mode = prevMode;
+      this.fileConfig = prevConfig;
+      throw err;
+    }
     return this.getAll();
   }
 
@@ -59,6 +69,8 @@ export class StorageManager {
     if (!client && (!url || !anonKey)) {
       throw new Error('StorageManager.useSupabase: provide { url, anonKey } or { client }');
     }
+    const prevMode = this.mode;
+    const prevConfig = this.supabaseConfig;
     this.mode = 'supabase';
     this.lastError = null;
     this.supabaseConfig = {
@@ -68,7 +80,13 @@ export class StorageManager {
       profileId,
       client
     };
-    await this.load();
+    try {
+      await this.load();
+    } catch (err) {
+      this.mode = prevMode;
+      this.supabaseConfig = prevConfig;
+      throw err;
+    }
     return this.getAll();
   }
 
@@ -98,10 +116,10 @@ export class StorageManager {
     return this.flush();
   }
 
-  remove(key) {
+  async remove(key) {
     const existed = this.cache.delete(key);
     this._saveToLocalStorage();
-    this.flush();
+    await this.flush();
     return existed;
   }
 
@@ -191,7 +209,9 @@ export class StorageManager {
   _replaceCache(obj = {}) {
     this.cache.clear();
     for (const [k, v] of Object.entries(obj)) {
-      this.cache.set(k, v);
+      if (!UNSAFE_KEYS.has(k)) {
+        this.cache.set(k, v);
+      }
     }
   }
 

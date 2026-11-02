@@ -38,7 +38,7 @@ export class ParticleSystem {
     spread = Math.PI * 2,
     drag = 0.98,
     gravity = 0,
-    glow = true
+    glow = false
   } = {}) {
     let spawned = 0;
 
@@ -101,6 +101,7 @@ export class ParticleSystem {
     if (this.active.length === 0) return;
 
     ctx.save();
+    let lastGlow = false;
     for (let i = 0; i < this.active.length; i++) {
       const p = this.active[i];
       const alpha = Math.max(0, 1 - p.life / p.maxLife);
@@ -108,8 +109,10 @@ export class ParticleSystem {
       if (p.glow) {
         ctx.shadowBlur = 8;
         ctx.shadowColor = p.color;
-      } else {
+        lastGlow = true;
+      } else if (lastGlow) {
         ctx.shadowBlur = 0;
+        lastGlow = false;
       }
       ctx.fillStyle = p.color;
       ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
@@ -128,7 +131,7 @@ export class ParticleSystem {
       x: 0, y: 0, vx: 0, vy: 0,
       color: '#f3ead3', size: 3,
       life: 0, maxLife: 300,
-      drag: 0.98, gravity: 0, glow: true
+      drag: 0.98, gravity: 0, glow: false
     };
   }
 }

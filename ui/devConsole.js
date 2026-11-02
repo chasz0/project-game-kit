@@ -41,6 +41,7 @@ export class DevConsole {
     this._logEl = null;
     this._watchEl = null;
     this._inputEl = null;
+    this._onWindowKeyDown = null;
 
     this.registerDefaults();
 
@@ -103,6 +104,16 @@ export class DevConsole {
     this._renderLogs();
   }
 
+  _tokenize(line) {
+    const tokens = [];
+    const re = /"([^"]*)"|'([^']*)'|(\S+)/g;
+    let match;
+    while ((match = re.exec(line)) !== null) {
+      tokens.push(match[1] ?? match[2] ?? match[3]);
+    }
+    return tokens;
+  }
+
   execute(rawLine, context = null) {
     const trimmed = String(rawLine || '').trim();
     if (!trimmed) return '';
@@ -113,7 +124,8 @@ export class DevConsole {
 
     this.log(`> ${trimmed}`, 'cmd');
 
-    const parts = trimmed.split(/\s+/);
+    const parts = this._tokenize(trimmed);
+    if (parts.length === 0) return '';
     const cmdName = parts[0].toLowerCase();
     const args = parts.slice(1);
 
@@ -147,6 +159,21 @@ export class DevConsole {
       }
     }
     return this.isOpen;
+  }
+
+  destroy() {
+    if (this._onWindowKeyDown && typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this._onWindowKeyDown);
+      this._onWindowKeyDown = null;
+    }
+    if (this._root && this._root.parentNode) {
+      this._root.parentNode.removeChild(this._root);
+    }
+    this._root = null;
+    this._logEl = null;
+    this._watchEl = null;
+    this._inputEl = null;
+    this.isOpen = false;
   }
 
   beginFrame() {
@@ -265,7 +292,6 @@ export class DevConsole {
     ctx.fillStyle = '#06080e';
     ctx.fillRect(gx, gy, gw, graphH);
 
-    // 16.67ms (60Hz) budget reference line
     const budgetY = gy + graphH - Math.min(graphH, (16.67 / 33.3) * graphH);
     ctx.strokeStyle = 'rgba(217, 185, 120, 0.35)';
     ctx.beginPath();
@@ -297,10 +323,21 @@ export class DevConsole {
     ctx.restore();
   }
 
+  _isExternalEditable(target) {
+    if (!target || target === this._inputEl) return false;
+    const tag = target.tagName;
+    return (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      Boolean(target.isContentEditable)
+    );
+  }
+
   _mountDOM(parent) {
     const root = document.createElement('div');
     root.style.cssText =
-      'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:min(760px,94vw);' +
+      'position:fixed;top:10%;left:50%;bottom:18px;transform:translateX(-50%);width:min(760px,94vw);' +
       'height:250px;background:rgba(8,11,18,0.95);border:1px solid #233452;border-radius:8px;' +
       'display:none;flex-direction:column;z-index:9999;font-family:monospace;font-size:12px;color:#e6e1d6;' +
       'box-shadow:0 12px 32px rgba(0,0,0,0.6);overflow:hidden;';
@@ -324,12 +361,13 @@ export class DevConsole {
     this._watchEl = root.querySelector('[data-role="watch"]');
     this._inputEl = root.querySelector('[data-role="input"]');
 
-    window.addEventListener('keydown', (e) => {
-      if (e.code === this.toggleKey) {
+    this._onWindowKeyDown = (e) => {
+      if (e.code === this.toggleKey && !this._isExternalEditable(e.target)) {
         e.preventDefault();
         this.toggle();
       }
-    });
+    };
+    window.addEventListener('keydown', this._onWindowKeyDown);
 
     this._inputEl.addEventListener('keydown', (e) => {
       e.stopPropagation();

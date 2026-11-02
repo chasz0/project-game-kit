@@ -3,6 +3,9 @@
 //   const visibleEnemies = lineOfSight.filterVisible(player, aimAngle, enemies, 260, Math.PI * 0.6, walls);
 //   const poly = lineOfSight.castVisionPolygon(player, aimAngle, Math.PI * 0.6, 260, 64, walls);
 
+const _rayScratch = { t: 0, x: 0, y: 0, nx: 0, ny: 0 };
+const _polyHitScratch = { t: 1, x: 0, y: 0, nx: 0, ny: 0, obstacle: null };
+
 export const lineOfSight = {
   rayBox(x1, y1, x2, y2, box, out = null) {
     const dx = x2 - x1;
@@ -68,13 +71,23 @@ export const lineOfSight = {
     const dy = y2 - y1;
     const fx = x1 - circle.x;
     const fy = y1 - circle.y;
+    const c = fx * fx + fy * fy - circle.r * circle.r;
+
+    if (c <= 0) {
+      if (!out) return true;
+      out.t = 0;
+      out.x = x1;
+      out.y = y1;
+      const len = Math.sqrt(fx * fx + fy * fy) || 1;
+      out.nx = fx / len;
+      out.ny = fy / len;
+      return out;
+    }
 
     const a = dx * dx + dy * dy;
     if (a === 0) return out ? null : false;
 
     const b = 2 * (fx * dx + fy * dy);
-    const c = fx * fx + fy * fy - circle.r * circle.r;
-
     let discriminant = b * b - 4 * a * c;
     if (discriminant < 0) return out ? null : false;
 
@@ -102,8 +115,8 @@ export const lineOfSight = {
     for (let i = 0; i < obstacles.length; i++) {
       const obs = obstacles[i];
       const blocked = obs.r !== undefined
-        ? this.rayCircle(a.x, a.y, b.x, b.y, obs, null)
-        : this.rayBox(a.x, a.y, b.x, b.y, obs, null);
+        ? lineOfSight.rayCircle(a.x, a.y, b.x, b.y, obs, null)
+        : lineOfSight.rayBox(a.x, a.y, b.x, b.y, obs, null);
       if (blocked) return false;
     }
     return true;
@@ -113,13 +126,12 @@ export const lineOfSight = {
     let bestT = Infinity;
     let bestObstacle = null;
     let bestX = x2, bestY = y2, bestNx = 0, bestNy = 0;
-    const scratch = { t: 0, x: 0, y: 0, nx: 0, ny: 0 };
 
     for (let i = 0; i < obstacles.length; i++) {
       const obs = obstacles[i];
       const hit = obs.r !== undefined
-        ? this.rayCircle(x1, y1, x2, y2, obs, scratch)
-        : this.rayBox(x1, y1, x2, y2, obs, scratch);
+        ? lineOfSight.rayCircle(x1, y1, x2, y2, obs, _rayScratch)
+        : lineOfSight.rayBox(x1, y1, x2, y2, obs, _rayScratch);
 
       if (hit && hit.t < bestT) {
         bestT = hit.t;
@@ -158,7 +170,7 @@ export const lineOfSight = {
       if (dot < Math.cos(fovAngle * 0.5)) return false;
     }
 
-    if (obstacles && !this.hasLineOfSight(observer, target, obstacles)) return false;
+    if (obstacles && !lineOfSight.hasLineOfSight(observer, target, obstacles)) return false;
     return true;
   },
 
@@ -167,7 +179,7 @@ export const lineOfSight = {
     out.length = 0;
     for (let i = 0; i < targets.length; i++) {
       const t = targets[i];
-      if (this.inVisionCone(observer, facingAngle, t, maxRange, fovAngle, obstacles)) {
+      if (lineOfSight.inVisionCone(observer, facingAngle, t, maxRange, fovAngle, obstacles)) {
         out.push(t);
       }
     }
@@ -181,13 +193,12 @@ export const lineOfSight = {
     const startAngle = fullCircle ? 0 : facingAngle - fovAngle * 0.5;
     const steps = Math.max(2, rayCount);
     const stepAngle = fullCircle ? (Math.PI * 2) / steps : fovAngle / (steps - 1);
-    const hitScratch = { t: 1, x: 0, y: 0, nx: 0, ny: 0, obstacle: null };
 
     for (let i = 0; i < steps; i++) {
       const angle = startAngle + i * stepAngle;
       const endX = origin.x + Math.cos(angle) * maxRange;
       const endY = origin.y + Math.sin(angle) * maxRange;
-      const hit = this.raycast(origin.x, origin.y, endX, endY, obstacles, hitScratch);
+      const hit = lineOfSight.raycast(origin.x, origin.y, endX, endY, obstacles, _polyHitScratch);
 
       if (hit) {
         outPoints.push({ x: hit.x, y: hit.y, hit: true });

@@ -8,6 +8,8 @@
 //   statuses.apply(player, 'chill');
 //   statuses.update(dt);
 
+const VALID_STACK_MODES = new Set(['refresh', 'extend', 'none']);
+
 export class StatusEffectManager {
   constructor() {
     this.definitions = new Map();
@@ -33,6 +35,9 @@ export class StatusEffectManager {
     onExpire = null
   } = {}) {
     if (!id) throw new Error('StatusEffectManager.define: id is required');
+    if (!VALID_STACK_MODES.has(stackMode)) {
+      throw new Error(`StatusEffectManager.define: invalid stackMode "${stackMode}" (use 'refresh', 'extend', or 'none')`);
+    }
     this.definitions.set(id, {
       id,
       duration: Math.max(1, duration),
@@ -78,7 +83,7 @@ export class StatusEffectManager {
       map.set(id, inst);
     } else {
       inst.stacks = Math.min(def.maxStacks, inst.stacks + Math.max(1, Math.floor(stacks)));
-      if ( source !== null ) inst.source = source;
+      if (source !== null) inst.source = source;
 
       if (def.stackMode === 'refresh') {
         inst.duration = dur;
@@ -104,27 +109,32 @@ export class StatusEffectManager {
     if (map.size === 0) this.entities.delete(entity);
 
     this._removeStatModifier(entity, inst.def);
-    if (inst.def.onExpire) inst.def.onExpire(entity, inst);
+    if (inst.def.onExpire) inst.def.onExpire(entity, inst, 'removed');
     return true;
   }
 
   clearEntity(entity) {
     const map = this.entities.get(entity);
     if (!map) return;
+    this.entities.delete(entity);
     for (const inst of map.values()) {
       this._removeStatModifier(entity, inst.def);
+      if (inst.def.onExpire) inst.def.onExpire(entity, inst, 'cleared');
     }
     map.clear();
-    this.entities.delete(entity);
   }
 
   clearAll() {
-    for (const [entity, map] of this.entities.entries()) {
+    const entries = Array.from(this.entities.entries());
+    this.entities.clear();
+    for (let i = 0; i < entries.length; i++) {
+      const [entity, map] = entries[i];
       for (const inst of map.values()) {
         this._removeStatModifier(entity, inst.def);
+        if (inst.def.onExpire) inst.def.onExpire(entity, inst, 'cleared');
       }
+      map.clear();
     }
-    this.entities.clear();
   }
 
   has(entity, id) {
@@ -205,7 +215,7 @@ export class StatusEffectManager {
         if (inst.remaining <= 0) {
           map.delete(id);
           this._removeStatModifier(entity, def);
-          if (def.onExpire) def.onExpire(entity, inst);
+          if (def.onExpire) def.onExpire(entity, inst, 'expired');
         }
       }
 

@@ -1,18 +1,14 @@
-// Timed wave progression and geometric spawn position calculator.
-//
-//   const spawner = new WaveSpawner({ rng: () => rng.next() });
-//   spawner.addWave({ duration: 15000, interval: 2000, count: 6, types: [{ id: 'grunt', weight: 3 }] });
-//   spawner.update(dt, player.x, player.y, (spawn) => createEnemy(spawn));
-
 export class WaveSpawner {
-  constructor({ rng = Math.random } = {}) {
+  constructor({ rng = Math.random, onWaveChange = null } = {}) {
     this.rng = rng;
+    this.onWaveChange = onWaveChange;
     this.waves = [];
     this.waveIndex = 0;
     this.waveNumber = 1;
     this.waveElapsed = 0;
     this.spawnTimer = 0;
     this.totalSpawned = 0;
+    this._spawnPoint = { x: 0, y: 0 };
   }
 
   addWave({
@@ -26,10 +22,17 @@ export class WaveSpawner {
     height = 600,
     types = [{ id: 'default', weight: 1 }]
   } = {}) {
+    if (!(duration > 0) || !Number.isFinite(duration)) {
+      throw new RangeError('WaveSpawner.addWave: duration must be a finite number > 0');
+    }
+    if (!Array.isArray(types) || types.length === 0) {
+      throw new RangeError('WaveSpawner.addWave: types must be a non-empty array');
+    }
+
     this.waves.push({
       duration,
       interval: Math.max(50, interval),
-      count: Math.max(1, count),
+      count: Math.max(1, Math.floor(count)),
       shape,
       minRadius,
       maxRadius,
@@ -47,24 +50,29 @@ export class WaveSpawner {
 
   update(dt, centerX = 0, centerY = 0, onSpawn = null) {
     const wave = this.currentWave;
-    if (!wave) return 0;
+    if (!wave || !(dt > 0) || !Number.isFinite(dt)) return 0;
 
     this.waveElapsed += dt;
     this.spawnTimer += dt;
 
     if (this.waveElapsed >= wave.duration) {
-      this.waveElapsed -= wave.duration;
+      this.waveElapsed %= wave.duration;
       this.waveNumber++;
       if (this.waveIndex < this.waves.length - 1) {
         this.waveIndex++;
       }
+      if (this.onWaveChange) {
+        this.onWaveChange(this.waveNumber, this.currentWave);
+      }
     }
 
     let spawnedNow = 0;
+    let ticks = 0;
     const active = this.currentWave;
 
-    while (this.spawnTimer >= active.interval) {
+    while (this.spawnTimer >= active.interval && ticks < 3) {
       this.spawnTimer -= active.interval;
+      ticks++;
       for (let i = 0; i < active.count; i++) {
         const pos = this._computePoint(active, centerX, centerY);
         const type = this._pickWeighted(active.types);
@@ -74,6 +82,10 @@ export class WaveSpawner {
           onSpawn({ x: pos.x, y: pos.y, type, wave: this.waveNumber });
         }
       }
+    }
+
+    if (this.spawnTimer >= active.interval) {
+      this.spawnTimer %= active.interval;
     }
 
     return spawnedNow;
@@ -110,9 +122,9 @@ export class WaveSpawner {
 
   _computePoint(wave, cx, cy) {
     if (wave.shape === 'perimeter') {
-      return this.pointOnPerimeter(cx, cy, wave.width, wave.height);
+      return this.pointOnPerimeter(cx, cy, wave.width, wave.height, this._spawnPoint);
     }
-    return this.pointOnRing(cx, cy, wave.minRadius, wave.maxRadius);
+    return this.pointOnRing(cx, cy, wave.minRadius, wave.maxRadius, this._spawnPoint);
   }
 
   _pickWeighted(types) {

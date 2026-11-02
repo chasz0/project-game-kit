@@ -31,8 +31,13 @@ export class Camera {
   }
 
   shake(durationMs, intensity) {
-    this.shakeTimer = durationMs;
-    this.shakeIntensity = intensity;
+    if (this.shakeTimer > 0) {
+      this.shakeTimer = Math.max(this.shakeTimer, durationMs);
+      this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
+    } else {
+      this.shakeTimer = Math.max(0, durationMs);
+      this.shakeIntensity = Math.max(0, intensity);
+    }
   }
 
   setZoom(level) {
@@ -40,26 +45,34 @@ export class Camera {
   }
 
   screenToWorld(screenX, screenY, out = { x: 0, y: 0 }) {
-    out.x = screenX / this.zoom + this.x;
-    out.y = screenY / this.zoom + this.y;
+    out.x = screenX / this.zoom + this.x - this.offsetX;
+    out.y = screenY / this.zoom + this.y - this.offsetY;
     return out;
   }
 
   worldToScreen(worldX, worldY, out = { x: 0, y: 0 }) {
-    out.x = (worldX - this.x) * this.zoom;
-    out.y = (worldY - this.y) * this.zoom;
+    out.x = (worldX - this.x + this.offsetX) * this.zoom;
+    out.y = (worldY - this.y + this.offsetY) * this.zoom;
     return out;
   }
 
   update(dt) {
     if (this.shakeTimer > 0) {
       this.shakeTimer -= dt;
-      this.offsetX = (Math.random() - 0.5) * 2 * this.shakeIntensity;
-      this.offsetY = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+      if (this.shakeTimer <= 0) {
+        this.shakeTimer = 0;
+        this.shakeIntensity = 0;
+        this.offsetX = 0;
+        this.offsetY = 0;
+      } else {
+        this.offsetX = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+        this.offsetY = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+      }
     } else {
       this.offsetX = 0;
       this.offsetY = 0;
       this.shakeTimer = 0;
+      this.shakeIntensity = 0;
     }
   }
 

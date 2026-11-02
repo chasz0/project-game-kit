@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
 
+const ROOT_DIR = import.meta.dirname;
+const MAX_BODY_BYTES = 1024 * 1024;
+
 function gamekitFileStoragePlugin() {
   return {
     name: 'gamekit-file-storage',
@@ -9,7 +12,7 @@ function gamekitFileStoragePlugin() {
       server.middlewares.use('/__gamekit_storage', (req, res) => {
         const url = new URL(req.url, 'http://localhost');
         const safeName = path.basename(url.searchParams.get('file') || 'gamekit-save.json');
-        const filePath = path.resolve(__dirname, safeName);
+        const filePath = path.resolve(ROOT_DIR, safeName);
 
         res.setHeader('Content-Type', 'application/json');
 
@@ -24,8 +27,18 @@ function gamekitFileStoragePlugin() {
 
         if (req.method === 'POST') {
           let body = '';
-          req.on('data', (chunk) => { body += chunk; });
+          let aborted = false;
+          req.on('data', (chunk) => {
+            body += chunk;
+            if (body.length > MAX_BODY_BYTES && !aborted) {
+              aborted = true;
+              res.statusCode = 413;
+              res.end(JSON.stringify({ error: 'Payload too large' }));
+              req.destroy();
+            }
+          });
           req.on('end', () => {
+            if (aborted) return;
             try {
               const parsed = JSON.parse(body || '{}');
               fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), 'utf8');
@@ -49,16 +62,27 @@ export default defineConfig({
   plugins: [gamekitFileStoragePlugin()],
   resolve: {
     alias: {
-      '@core': path.resolve(__dirname, './core'),
-      '@gameplay': path.resolve(__dirname, './gameplay'),
-      '@ai': path.resolve(__dirname, './ai'),
-      '@world': path.resolve(__dirname, './world'),
-      '@ui': path.resolve(__dirname, './ui')
+      '@core': path.resolve(ROOT_DIR, './core'),
+      '@gameplay': path.resolve(ROOT_DIR, './gameplay'),
+      '@ai': path.resolve(ROOT_DIR, './ai'),
+      '@world': path.resolve(ROOT_DIR, './world'),
+      '@ui': path.resolve(ROOT_DIR, './ui')
     }
   },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.js'],
+    coverage: {
+      provider: 'v8',
+      include: ['core/**', 'gameplay/**', 'ai/**', 'world/**', 'ui/**'],
+      reporter: ['text', 'html', 'lcov'],
+      thresholds: {
+        lines: 80,
+        branches: 70,
+        functions: 80,
+        perFile: false
+      }
+    },
     benchmark: {
       include: ['tests/**/*.bench.js']
     }

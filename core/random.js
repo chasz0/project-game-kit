@@ -12,23 +12,39 @@ export class Random {
   }
 
   setSeed(seed) {
-    if (typeof seed === 'string') {
-      let h = 2166136261 >>> 0;
-      for (let i = 0; i < seed.length; i++) {
-        h ^= seed.charCodeAt(i);
-        h = Math.imul(h, 16777619);
-      }
-      this.state = h >>> 0;
-    } else if (typeof seed === 'number' && Number.isFinite(seed)) {
-      this.state = (Math.floor(Math.abs(seed)) || 1) >>> 0;
-    } else {
+    if (typeof seed !== 'string' && !(typeof seed === 'number' && Number.isFinite(seed))) {
       throw new TypeError(`Random: seed must be a finite number or string, got ${seed}`);
     }
+    const str = typeof seed === 'number' && Object.is(seed, -0) ? '-0' : String(seed);
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x85ebca6b);
+    h ^= h >>> 13;
+    h = Math.imul(h, 0xc2b2ae35);
+    h ^= h >>> 16;
+    this.state = (h >>> 0) || 1;
+    return this;
+  }
+
+  getState() {
+    return this.state >>> 0;
+  }
+
+  setState(state) {
+    if (typeof state !== 'number' || !Number.isFinite(state)) {
+      throw new TypeError(`Random.setState: state must be a finite number, got ${state}`);
+    }
+    this.state = state >>> 0;
+    return this;
   }
 
   // Returns a float in [0, 1).
   next() {
-    let t = (this.state += 0x6d2b79f5);
+    let t = (this.state = (this.state + 0x6d2b79f5) >>> 0);
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;

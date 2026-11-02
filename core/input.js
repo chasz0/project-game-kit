@@ -14,9 +14,18 @@ export class InputManager {
     this.targetElement = targetElement;
     this._attached = false;
 
-    this._onKeyDown = (e) => this.state.set(e.code, true);
-    this._onKeyUp = (e) => this.state.set(e.code, false);
+    this._onKeyDown = (e) => {
+      if (this._isEditableTarget(e.target)) return;
+      this.state.set(e.code, true);
+    };
+    this._onKeyUp = (e) => {
+      if (this._isEditableTarget(e.target)) return;
+      this.state.set(e.code, false);
+    };
     this._onMouseDown = (e) => {
+      if (this._isEditableTarget(e.target)) return;
+      const el = this._resolveTarget(e);
+      if (el && e.target && e.target !== el) return;
       this._updateMouse(e);
       this.state.set(`Mouse${e.button}`, true);
     };
@@ -35,6 +44,17 @@ export class InputManager {
     if (typeof window !== 'undefined') {
       this.attach();
     }
+  }
+
+  _isEditableTarget(target) {
+    if (!target || typeof target !== 'object') return false;
+    const tag = target.tagName;
+    return (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      Boolean(target.isContentEditable)
+    );
   }
 
   _resolveTarget(e) {

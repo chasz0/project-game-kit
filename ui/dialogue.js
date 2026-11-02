@@ -1,21 +1,7 @@
-// Branching dialogue state machine with typewriter reveal, conditional choices,
-// action callbacks, and non-blocking tactical radio/boss barks for action games.
-//
-//   const dialogue = new DialogueSystem({ charsPerSecond: 45 });
-//   dialogue.addNode('shrine_1', {
-//     speaker: 'ANCIENT SHRINE',
-//     text: 'Offer 25 HP for +35% Damage?',
-//     choices: [
-//       { label: 'Accept Offering', next: 'accepted', condition: (p) => p.hp > 25, action: (p) => p.buff() },
-//       { label: 'Leave', next: null }
-//     ]
-//   });
-//   dialogue.start('shrine_1', playerContext);
-//   dialogue.bark('HQ COMMS', 'Peak swarm surge incoming!', { duration: 3200 });
-
 export class DialogueSystem {
-  constructor({ charsPerSecond = 45, onNodeEnter = null, onEnd = null } = {}) {
+  constructor({ charsPerSecond = 45, maxBarkQueue = 10, onNodeEnter = null, onEnd = null } = {}) {
     this.charsPerSecond = Math.max(1, charsPerSecond);
+    this.maxBarkQueue = Math.max(1, maxBarkQueue);
     this.onNodeEnter = onNodeEnter;
     this.onEnd = onEnd;
 
@@ -24,6 +10,7 @@ export class DialogueSystem {
     this.currentNode = null;
     this.context = null;
     this.charIndex = 0;
+    this._choices = [];
 
     this.barkQueue = [];
     this.activeBark = null;
@@ -72,7 +59,18 @@ export class DialogueSystem {
     return this.getState();
   }
 
-  // Skips typewriter animation if still typing; otherwise advances linear nodes.
+  refreshChoices() {
+    this._choices.length = 0;
+    if (!this.currentNode || !this.currentNode.choices) return this._choices;
+    for (let i = 0; i < this.currentNode.choices.length; i++) {
+      const c = this.currentNode.choices[i];
+      if (!c.condition || c.condition(this.context)) {
+        this._choices.push(c);
+      }
+    }
+    return this._choices;
+  }
+
   advance() {
     if (!this.currentNode) return false;
 
@@ -81,8 +79,7 @@ export class DialogueSystem {
       return true;
     }
 
-    const choices = this.getAvailableChoices();
-    if (choices.length > 0) {
+    if (this._choices.length > 0) {
       return false;
     }
 
@@ -101,10 +98,9 @@ export class DialogueSystem {
       this.charIndex = this.currentNode.text.length;
     }
 
-    const choices = this.getAvailableChoices();
-    if (choiceIndex < 0 || choiceIndex >= choices.length) return false;
+    if (choiceIndex < 0 || choiceIndex >= this._choices.length) return false;
 
-    const picked = choices[choiceIndex];
+    const picked = this._choices[choiceIndex];
     if (picked.action) {
       picked.action(this.context);
     }
@@ -118,15 +114,7 @@ export class DialogueSystem {
   }
 
   getAvailableChoices() {
-    if (!this.currentNode || !this.currentNode.choices) return [];
-    const out = [];
-    for (let i = 0; i < this.currentNode.choices.length; i++) {
-      const c = this.currentNode.choices[i];
-      if (!c.condition || c.condition(this.context)) {
-        out.push(c);
-      }
-    }
-    return out;
+    return this._choices;
   }
 
   close() {
@@ -134,16 +122,27 @@ export class DialogueSystem {
     this.currentId = null;
     this.currentNode = null;
     this.charIndex = 0;
+    this._choices.length = 0;
     if (wasActive && this.onEnd) {
       this.onEnd(this.context);
     }
   }
 
-  // Queues a non-blocking tactical radio/boss transmission banner for real-time combat.
-  bark(speaker, text, { duration = 3000, color = '#d9b978' } = {}) {
+  bark(speaker, text, { duration = 3000, color = '#d9b978', key = null } = {}) {
+    const strText = String(text);
+    const dedupeKey = key ?? `${speaker}:${strText}`;
+
+    if (this.activeBark && this.activeBark.key === dedupeKey) {
+      return this.activeBark;
+    }
+    for (let i = 0; i < this.barkQueue.length; i++) {
+      if (this.barkQueue[i].key === dedupeKey) return this.barkQueue[i];
+    }
+
     const item = {
+      key: dedupeKey,
       speaker,
-      text: String(text),
+      text: strText,
       duration: Math.max(400, duration),
       remaining: Math.max(400, duration),
       charIndex: 0,
@@ -152,7 +151,7 @@ export class DialogueSystem {
 
     if (!this.activeBark) {
       this.activeBark = item;
-    } else {
+    } else if (this.barkQueue.length < this.maxBarkQueue) {
       this.barkQueue.push(item);
     }
     return item;
@@ -194,11 +193,10 @@ export class DialogueSystem {
       fullText: this.currentNode.text,
       visibleText: this.visibleText,
       isTyping: this.isTyping,
-      choices: this.getAvailableChoices()
+      choices: this._choices
     };
   }
 
-  // Draws the active non-blocking radio/boss bark banner onto a 2D canvas.
   renderBarkBanner(ctx, canvasWidth = 800, y = 46) {
     if (!this.activeBark) return;
 
@@ -227,7 +225,7 @@ export class DialogueSystem {
     ctx.fillStyle = '#f3ead3';
     ctx.font = '11px monospace';
     const vis = b.text.slice(0, Math.floor(b.charIndex));
-    ctx.fillText(vis, x + 12, y + 32);
+    ctx.fillText(vis, x + 12, y + 32, w - 24);
 
     ctx.restore();
   }
@@ -243,6 +241,7 @@ export class DialogueSystem {
     this.charIndex = 0;
 
     if (node.onEnter) node.onEnter(this.context);
+    this.refreshChoices();
     if (this.onNodeEnter) this.onNodeEnter(this.getState(), this.context);
   }
 }

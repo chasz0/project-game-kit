@@ -34,9 +34,12 @@ export class Inventory {
 
   // Adds up to `count` items into existing or free slots. Returns { added, overflow }.
   add(id, count = 1) {
-    if (!(count > 0)) return { added: 0, overflow: 0 };
+    if (!Number.isFinite(count)) return { added: 0, overflow: 0 };
+    const total = Math.floor(count);
+    if (!(total > 0)) return { added: 0, overflow: 0 };
+
     const def = this.definitions.get(id) || { id, name: id, maxStack: 99, consumable: false };
-    let remaining = Math.floor(count);
+    let remaining = total;
 
     for (let i = 0; i < this.slots.length && remaining > 0; i++) {
       const slot = this.slots[i];
@@ -54,12 +57,14 @@ export class Inventory {
       remaining -= transfer;
     }
 
-    return { added: count - remaining, overflow: remaining };
+    return { added: total - remaining, overflow: remaining };
   }
 
   remove(id, count = 1) {
-    if (!this.has(id, count)) return false;
-    let remaining = Math.floor(count);
+    if (!Number.isFinite(count)) return false;
+    const total = Math.floor(count);
+    if (!(total > 0) || !this.has(id, total)) return false;
+    let remaining = total;
 
     for (let i = this.slots.length - 1; i >= 0 && remaining > 0; i--) {
       const slot = this.slots[i];
@@ -89,7 +94,8 @@ export class Inventory {
     if (!this.has(id, 1)) return false;
     const def = this.definitions.get(id);
     if (def && def.onUse) {
-      def.onUse(context);
+      const shouldConsume = def.onUse(context);
+      if (shouldConsume === false) return false;
     }
     if (!def || def.consumable) {
       this.remove(id, 1);

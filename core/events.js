@@ -42,9 +42,15 @@ export class EventEmitter {
     const list = this.listeners.get(event);
     if (!list || list.length === 0) return;
     const snapshot = list.slice();
+    let firstError = null;
     for (let i = 0; i < snapshot.length; i++) {
-      snapshot[i](data);
+      try {
+        snapshot[i](data);
+      } catch (err) {
+        if (!firstError) firstError = err;
+      }
     }
+    if (firstError) throw firstError;
   }
 
   clear(event) {

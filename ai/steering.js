@@ -4,6 +4,8 @@
 //   const force = steering.flee(enemy, player, enemy.maxSpeed, 160);
 //   steering.applyForce(enemy, force, enemy.maxForce, enemy.maxSpeed, dt);
 
+const _targetScratch = { x: 0, y: 0 };
+
 const clampVec = (out, maxLen) => {
   const mSq = out.x * out.x + out.y * out.y;
   if (mSq > maxLen * maxLen && mSq > 0) {
@@ -51,7 +53,6 @@ export const steering = {
     }
 
     const dist = Math.sqrt(distSq);
-    // Taper desired speed near the outer edge of panicRadius for a smooth stop
     const speed = Number.isFinite(panicRadius)
       ? maxSpeed * Math.min(1, (panicRadius - dist) / (panicRadius * 0.35))
       : maxSpeed;
@@ -87,11 +88,9 @@ export const steering = {
     const speed = Math.sqrt((agent.vx || 0) ** 2 + (agent.vy || 0) ** 2);
     const lookAhead = speed <= dist / maxPrediction ? maxPrediction : dist / (speed || 1);
 
-    const future = {
-      x: target.x + (target.vx || 0) * lookAhead,
-      y: target.y + (target.vy || 0) * lookAhead
-    };
-    return this.seek(agent, future, maxSpeed, out);
+    _targetScratch.x = target.x + (target.vx || 0) * lookAhead;
+    _targetScratch.y = target.y + (target.vy || 0) * lookAhead;
+    return steering.seek(agent, _targetScratch, maxSpeed, out);
   },
 
   orbit(agent, target, radius, maxSpeed, clockwise = true, out = { x: 0, y: 0 }) {
@@ -116,8 +115,8 @@ export const steering = {
   },
 
   // Smooth random patrolling using a forward circle projection.
-  wander(agent, maxSpeed, { distance = 60, radius = 35, jitter = 0.35 } = {}, out = { x: 0, y: 0 }) {
-    agent._wanderAngle = (agent._wanderAngle || 0) + (Math.random() - 0.5) * 2 * jitter;
+  wander(agent, maxSpeed, { distance = 60, radius = 35, jitter = 0.35, rng = Math.random } = {}, out = { x: 0, y: 0 }) {
+    agent._wanderAngle = (agent._wanderAngle || 0) + (rng() - 0.5) * 2 * jitter;
 
     const vx = agent.vx || 0;
     const vy = agent.vy || 0;
@@ -127,10 +126,10 @@ export const steering = {
 
     const centerX = agent.x + headingX * distance;
     const centerY = agent.y + headingY * distance;
-    const targetX = centerX + Math.cos(agent._wanderAngle) * radius;
-    const targetY = centerY + Math.sin(agent._wanderAngle) * radius;
+    _targetScratch.x = centerX + Math.cos(agent._wanderAngle) * radius;
+    _targetScratch.y = centerY + Math.sin(agent._wanderAngle) * radius;
 
-    return this.seek(agent, { x: targetX, y: targetY }, maxSpeed, out);
+    return steering.seek(agent, _targetScratch, maxSpeed, out);
   },
 
   separate(agent, neighbors, desiredSeparation = 32, maxSpeed = 200, out = { x: 0, y: 0 }) {

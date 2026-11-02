@@ -1,10 +1,4 @@
-// Seeded procedural grid generators for caves, dungeons, and tactical arenas.
-//
-//   const cave = procgen.cellularAutomata({ cols: 50, rows: 50, rng: () => rng.next() });
-//   const dungeon = procgen.dungeonRooms({ cols: 50, rows: 50, roomCount: 10, rng: () => rng.next() });
-
 export const procgen = {
-  // Generates organic caves and flood-fills isolated pockets so the whole map is reachable.
   cellularAutomata({
     cols = 40,
     rows = 40,
@@ -36,7 +30,7 @@ export const procgen = {
             next[r * cols + c] = 1;
             continue;
           }
-          const neighbors = this._countWallNeighbors(grid, cols, rows, c, r);
+          const neighbors = procgen._countWallNeighbors(grid, cols, rows, c, r);
           const cur = grid[r * cols + c];
           if (cur === 1) {
             next[r * cols + c] = neighbors >= survivalLimit ? 1 : 0;
@@ -51,14 +45,13 @@ export const procgen = {
     }
 
     if (ensureConnected) {
-      this._keepLargestCavern(grid, cols, rows);
+      procgen._keepLargestCavern(grid, cols, rows);
     }
 
-    const spawn = this.findOpenTile(grid, cols, rows);
+    const spawn = procgen.findOpenTile(grid, cols, rows);
     return { grid, cols, rows, spawn };
   },
 
-  // Carves non-overlapping rectangular rooms and connects them with L-shaped corridors.
   dungeonRooms({
     cols = 40,
     rows = 40,
@@ -72,55 +65,65 @@ export const procgen = {
     grid.fill(1);
 
     const rooms = [];
-    const maxAttempts = roomCount * 8;
+    const maxW = Math.min(maxSize, cols - 4);
+    const maxH = Math.min(maxSize, rows - 4);
+    const minW = Math.min(minSize, maxW);
+    const minH = Math.min(minSize, maxH);
 
-    for (let a = 0; a < maxAttempts && rooms.length < roomCount; a++) {
-      const w = minSize + Math.floor(rng() * (maxSize - minSize + 1));
-      const h = minSize + Math.floor(rng() * (maxSize - minSize + 1));
-      const x = 2 + Math.floor(rng() * Math.max(1, cols - w - 4));
-      const y = 2 + Math.floor(rng() * Math.max(1, rows - h - 4));
+    if (maxW >= 1 && maxH >= 1) {
+      const maxAttempts = roomCount * 8;
 
-      let overlaps = false;
-      for (let i = 0; i < rooms.length; i++) {
-        const other = rooms[i];
-        if (
-          x - 2 < other.x + other.w &&
-          x + w + 2 > other.x &&
-          y - 2 < other.y + other.h &&
-          y + h + 2 > other.y
-        ) {
-          overlaps = true;
-          break;
+      for (let a = 0; a < maxAttempts && rooms.length < roomCount; a++) {
+        const w = minW + Math.floor(rng() * (maxW - minW + 1));
+        const h = minH + Math.floor(rng() * (maxH - minH + 1));
+        const availX = Math.max(1, cols - w - 3);
+        const availY = Math.max(1, rows - h - 3);
+        const x = 2 + Math.floor(rng() * availX);
+        const y = 2 + Math.floor(rng() * availY);
+
+        if (x + w > cols - 1 || y + h > rows - 1) continue;
+
+        let overlaps = false;
+        for (let i = 0; i < rooms.length; i++) {
+          const other = rooms[i];
+          if (
+            x - 2 < other.x + other.w &&
+            x + w + 2 > other.x &&
+            y - 2 < other.y + other.h &&
+            y + h + 2 > other.y
+          ) {
+            overlaps = true;
+            break;
+          }
         }
-      }
 
-      if (overlaps) continue;
+        if (overlaps) continue;
 
-      for (let r = y; r < y + h; r++) {
-        for (let c = x; c < x + w; c++) {
-          grid[r * cols + c] = 0;
+        for (let r = y; r < y + h; r++) {
+          for (let c = x; c < x + w; c++) {
+            grid[r * cols + c] = 0;
+          }
         }
+
+        const cx = Math.floor(x + w * 0.5);
+        const cy = Math.floor(y + h * 0.5);
+
+        if (rooms.length > 0) {
+          const prev = rooms[rooms.length - 1];
+          procgen._carveCorridor(grid, cols, rows, prev.cx, prev.cy, cx, cy, corridorWidth);
+        }
+
+        rooms.push({ x, y, w, h, cx, cy });
       }
-
-      const cx = Math.floor(x + w * 0.5);
-      const cy = Math.floor(y + h * 0.5);
-
-      if (rooms.length > 0) {
-        const prev = rooms[rooms.length - 1];
-        this._carveCorridor(grid, cols, rows, prev.cx, prev.cy, cx, cy, corridorWidth);
-      }
-
-      rooms.push({ x, y, w, h, cx, cy });
     }
 
     const spawn = rooms.length > 0
       ? { col: rooms[0].cx, row: rooms[0].cy }
-      : this.findOpenTile(grid, cols, rows);
+      : procgen.findOpenTile(grid, cols, rows);
 
     return { grid, cols, rows, rooms, spawn };
   },
 
-  // Generates an open arena with spaced pillars and a guaranteed clear center zone.
   arenaPillars({
     cols = 40,
     rows = 40,
@@ -154,6 +157,8 @@ export const procgen = {
       attempts++;
       const w = minSize + Math.floor(rng() * (maxSize - minSize + 1));
       const h = minSize + Math.floor(rng() * (maxSize - minSize + 1));
+      if (w >= cols - 6 || h >= rows - 6) continue;
+
       const c = 3 + Math.floor(rng() * Math.max(1, cols - w - 6));
       const r = 3 + Math.floor(rng() * Math.max(1, rows - h - 6));
 
@@ -188,17 +193,16 @@ export const procgen = {
       pillars.push({ c, r, w, h });
     }
 
-    return { grid, cols, rows, pillars, spawn: { col: midC, row: midR } };
+    return { grid, cols, rows, pillars, spawn: procgen.findOpenTile(grid, cols, rows) };
   },
 
-  // Finds the open tile (value === 0) closest to the center of the map.
   findOpenTile(grid, cols, rows) {
     const midC = Math.floor(cols * 0.5);
     const midR = Math.floor(rows * 0.5);
     if (grid[midR * cols + midC] === 0) return { col: midC, row: midR };
 
     const maxR = Math.max(cols, rows);
-    for (let rad = 1; rad < maxR; rad++) {
+    for (let rad = 1; rad <= maxR; rad++) {
       for (let dr = -rad; dr <= rad; dr++) {
         for (let dc = -rad; dc <= rad; dc++) {
           const c = midC + dc;
@@ -209,7 +213,7 @@ export const procgen = {
         }
       }
     }
-    return { col: midC, row: midR };
+    return null;
   },
 
   _countWallNeighbors(grid, cols, rows, col, row) {

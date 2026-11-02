@@ -12,10 +12,14 @@ import { collision } from './collision.js';
 
 export class WeaponSystem {
   constructor({ maxProjectiles = 800, maxZones = 50 } = {}) {
+    this.maxProjectiles = Math.max(1, maxProjectiles);
+    this.maxZones = Math.max(1, maxZones);
     this.projectiles = [];
     this.zones = [];
     this.orbitGroups = new Map();
     this._queryScratch = [];
+    this._playerCircle = { x: 0, y: 0, r: 14, ref: null };
+    this._bladeScratch = { x: 0, y: 0, r: 7, damage: 14, team: 'player' };
 
     this.projectilePool = new Pool({
       create: () => ({
@@ -26,7 +30,7 @@ export class WeaponSystem {
         turnRate: 6, homingRange: 260,
         behavior: 'linear', team: 'player',
         owner: null, color: '#f3ead3', shape: 'bolt',
-        onHit: null, hitSet: new Set()
+        onHit: null, _returning: false, hitSet: new Set()
       }),
       init: (p, x, y, angle, cfg) => {
         p.x = x;
@@ -50,15 +54,17 @@ export class WeaponSystem {
         p.color = cfg.color ?? '#f3ead3';
         p.shape = cfg.shape ?? 'bolt';
         p.onHit = cfg.onHit ?? null;
+        p._returning = false;
         p.hitSet.clear();
       },
       reset: (p) => {
         p.hitSet.clear();
+        p._returning = false;
         p.owner = null;
         p.onHit = null;
       },
       size: 120,
-      maxSize: maxProjectiles
+      maxSize: this.maxProjectiles
     });
 
     this.zonePool = new Pool({
@@ -85,7 +91,7 @@ export class WeaponSystem {
         z.onTick = null;
       },
       size: 12,
-      maxSize: maxZones
+      maxSize: this.maxZones
     });
   }
 
@@ -106,11 +112,16 @@ export class WeaponSystem {
       ? (fullCircle ? (Math.PI * 2) / count : spread / (count - 1))
       : 0;
 
+    let spawned = 0;
     for (let i = 0; i < count; i++) {
+      if (this.projectiles.length >= this.maxProjectiles) {
+        this.projectilePool.release(this.projectiles.shift());
+      }
       const a = count === 1 ? aimAngle : startAngle + i * step;
       this.projectiles.push(this.projectilePool.get(x, y, a, config));
+      spawned++;
     }
-    return count;
+    return spawned;
   }
 
   setOrbiters(owner, {
@@ -149,6 +160,9 @@ export class WeaponSystem {
   }
 
   spawnZone(x, y, config = {}) {
+    if (this.zones.length >= this.maxZones) {
+      this.zonePool.release(this.zones.shift());
+    }
     const z = this.zonePool.get(x, y, config);
     this.zones.push(z);
     return z;
@@ -173,9 +187,14 @@ export class WeaponSystem {
     onHit = null
   } = {}) {
     const dtSec = dt / 1000;
-    const playerCircle = player
-      ? { x: player.pos ? player.pos.x : player.x, y: player.pos ? player.pos.y : player.y, r: player.r ?? 14, ref: player }
-      : null;
+    let playerCircle = null;
+    if (player) {
+      playerCircle = this._playerCircle;
+      playerCircle.x = player.pos ? player.pos.x : player.x;
+      playerCircle.y = player.pos ? player.pos.y : player.y;
+      playerCircle.r = player.r ?? 14;
+      playerCircle.ref = player;
+    }
 
     // Update active hazard zones
     for (let i = this.zones.length - 1; i >= 0; i--) {
@@ -209,6 +228,7 @@ export class WeaponSystem {
     }
 
     // Update orbiting blades
+    const blade = this._bladeScratch;
     for (const group of this.orbitGroups.values()) {
       group.angle += group.speed * dtSec;
 
@@ -221,15 +241,14 @@ export class WeaponSystem {
       const oy = group.owner.pos ? group.owner.pos.y : group.owner.y;
       const stepAngle = (Math.PI * 2) / group.count;
 
+      blade.r = group.r;
+      blade.damage = group.damage;
+      blade.team = group.team;
+
       for (let i = 0; i < group.count; i++) {
         const a = group.angle + i * stepAngle;
-        const blade = {
-          x: ox + Math.cos(a) * group.radius,
-          y: oy + Math.sin(a) * group.radius,
-          r: group.r,
-          damage: group.damage,
-          team: group.team
-        };
+        blade.x = ox + Math.cos(a) * group.radius;
+        blade.y = oy + Math.sin(a) * group.radius;
 
         if (group.team === 'player' && spatialHash) {
           spatialHash.queryRadius(blade.x, blade.y, blade.r + 24, this._queryScratch);
@@ -266,6 +285,10 @@ export class WeaponSystem {
       if (p.behavior === 'boomerang' && p.owner) {
         const progress = 1 - p.life / p.maxLife;
         if (progress > 0.45) {
+          if (!p._returning) {
+            p._returning = true;
+            p.hitSet.clear();
+          }
           const ox = p.owner.pos ? p.owner.pos.x : p.owner.x;
           const oy = p.owner.pos ? p.owner.pos.y : p.owner.y;
           const dx = ox - p.x;
@@ -298,67 +321,77 @@ export class WeaponSystem {
         }
       }
 
-      p.x += p.vx * dtSec;
-      p.y += p.vy * dtSec;
-
-      let hitWall = false;
-      if (tilemap && tilemap.isSolidAtWorld(p.x, p.y)) {
-        hitWall = true;
-      } else if (obstacles) {
-        for (let j = 0; j < obstacles.length; j++) {
-          if (collision.circleBox(p, obstacles[j])) {
-            hitWall = true;
-            break;
-          }
-        }
-      }
-
-      if (hitWall && p.behavior !== 'boomerang') {
-        this.projectilePool.release(p);
-        this.projectiles.splice(i, 1);
-        continue;
-      }
+      const stepX = p.vx * dtSec;
+      const stepY = p.vy * dtSec;
+      const stepDist = Math.hypot(stepX, stepY);
+      const subSteps = Math.max(1, Math.min(8, Math.ceil(stepDist / Math.max(4, p.r * 1.5))));
+      const dxSub = stepX / subSteps;
+      const dySub = stepY / subSteps;
 
       let destroyProjectile = false;
 
-      if (p.team === 'player' && spatialHash) {
-        spatialHash.queryRadius(p.x, p.y, p.r + 24, this._queryScratch);
-        for (let j = 0; j < this._queryScratch.length; j++) {
-          const e = this._queryScratch[j];
-          if ((e.stats && e.stats.dead) || p.hitSet.has(e)) continue;
+      for (let s = 0; s < subSteps && !destroyProjectile; s++) {
+        p.x += dxSub;
+        p.y += dySub;
 
-          if (collision.circleCircle(p, e)) {
-            p.hitSet.add(e);
-            if (p.onHit) p.onHit(e, p);
-            if (onHit) onHit(e, p);
-
-            if (p.behavior === 'ricochet' && p.bounces > 0) {
-              p.bounces--;
-              const nextTarget = this._findClosestTarget(p, spatialHash, null, p.bounceRange);
-              if (nextTarget) {
-                p.angle = Math.atan2(nextTarget.y - p.y, nextTarget.x - p.x);
-                p.vx = Math.cos(p.angle) * p.speed;
-                p.vy = Math.sin(p.angle) * p.speed;
-              } else {
-                destroyProjectile = true;
-              }
-              break;
-            } else if (p.behavior === 'boomerang') {
-              continue;
-            } else if (p.pierce > 0) {
-              p.pierce--;
-            } else {
-              destroyProjectile = true;
+        let hitWall = false;
+        if (tilemap && tilemap.isSolidAtWorld(p.x, p.y)) {
+          hitWall = true;
+        } else if (obstacles) {
+          for (let j = 0; j < obstacles.length; j++) {
+            if (collision.circleBox(p, obstacles[j])) {
+              hitWall = true;
               break;
             }
           }
         }
-      } else if (p.team === 'enemy' && playerCircle) {
-        if (!p.hitSet.has(playerCircle.ref) && collision.circleCircle(p, playerCircle)) {
-          p.hitSet.add(playerCircle.ref);
-          if (p.onHit) p.onHit(playerCircle.ref, p);
-          if (onHit) onHit(playerCircle.ref, p);
+
+        if (hitWall && p.behavior !== 'boomerang') {
           destroyProjectile = true;
+          break;
+        }
+
+        if (p.team === 'player' && spatialHash) {
+          spatialHash.queryRadius(p.x, p.y, p.r + 24, this._queryScratch);
+          for (let j = 0; j < this._queryScratch.length; j++) {
+            const e = this._queryScratch[j];
+            if ((e.stats && e.stats.dead) || p.hitSet.has(e)) continue;
+
+            if (collision.circleCircle(p, e)) {
+              p.hitSet.add(e);
+              if (p.onHit) p.onHit(e, p);
+              if (onHit) onHit(e, p);
+
+              if (p.behavior === 'ricochet' && p.bounces > 0) {
+                p.bounces--;
+                const nextTarget = this._findClosestTarget(p, spatialHash, null, p.bounceRange);
+                if (nextTarget) {
+                  p.angle = Math.atan2(nextTarget.y - p.y, nextTarget.x - p.x);
+                  p.vx = Math.cos(p.angle) * p.speed;
+                  p.vy = Math.sin(p.angle) * p.speed;
+                } else {
+                  destroyProjectile = true;
+                }
+                s = subSteps;
+                break;
+              } else if (p.behavior === 'boomerang') {
+                continue;
+              } else if (p.pierce > 0) {
+                p.pierce--;
+              } else {
+                destroyProjectile = true;
+                break;
+              }
+            }
+          }
+        } else if (p.team === 'enemy' && playerCircle) {
+          if (!p.hitSet.has(playerCircle.ref) && collision.circleCircle(p, playerCircle)) {
+            p.hitSet.add(playerCircle.ref);
+            if (p.onHit) p.onHit(playerCircle.ref, p);
+            if (onHit) onHit(playerCircle.ref, p);
+            destroyProjectile = true;
+            break;
+          }
         }
       }
 

@@ -68,7 +68,7 @@ export class Stats {
       }
     }
 
-    return val * percent;
+    return val * Math.max(0, percent);
   }
 
   // Returns true only on the hit that kills. Negative damage counts as 0.
